@@ -1,5 +1,4 @@
 #include "peregrine-constellation.h"
-#include "packet.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
