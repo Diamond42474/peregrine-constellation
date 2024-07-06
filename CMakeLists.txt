@@ -7,17 +7,8 @@ project(${PROJECT_NAME} VERSION 0.1.0 LANGUAGES C CXX)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
-# Include directories
-include_directories(include)
-
-# Source files
-set(SOURCES
-    src/peregrine-constellation.c
-    src/packet.c
-)
-
-# Create static library
-add_library(${PROJECT_NAME} STATIC ${SOURCES})
+# Add main project
+add_subdirectory(peregrine-constellation)
 
 # Add examples
 add_subdirectory(examples)
