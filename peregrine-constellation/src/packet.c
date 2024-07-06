@@ -1,4 +1,4 @@
-#include "packet.h"
+#include "../include/packet.h"
 #include <string.h>
 
 uint16_t calculate_checksum(const mesh_packet_t *packet)

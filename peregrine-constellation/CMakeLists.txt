@@ -8,5 +8,5 @@ target_sources(peregrine-constellation
 
 target_include_directories(peregrine-constellation
     INTERFACE 
-      ${CMAKE_CURRENT_LIST_DIR}/include
+      ${CMAKE_CURRENT_LIST_DIR}
 )

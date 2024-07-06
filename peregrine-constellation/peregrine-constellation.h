@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
-#include "pconfig.h"
+#include "include/pconfig.h"
 
 // Error codes
 typedef enum {
