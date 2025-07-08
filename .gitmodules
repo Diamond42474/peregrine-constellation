@@ -1,0 +1,3 @@
+[submodule "lib/c-logger"]
+	path = lib/c-logger
+	url = https://github.com/Diamond42474/c-logger.git

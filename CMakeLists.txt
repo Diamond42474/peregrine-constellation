@@ -7,6 +7,9 @@ project(${PROJECT_NAME} VERSION 0.1.0 LANGUAGES C CXX)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
+# Add libraries
+add_subdirectory(lib)
+
 # Add main project
 add_subdirectory(peregrine-constellation)
 
