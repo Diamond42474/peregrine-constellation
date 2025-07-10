@@ -31,13 +31,4 @@ int fsk_decoder_stop(fsk_decoder_handle_t *handle);
 int fsk_decoder_is_running(fsk_decoder_handle_t *handle);
 int fsk_decoder_process(fsk_decoder_handle_t *handle);
 
-int fsk_decoder_set_adc_callbacks(fsk_decoder_handle_t *handle,
-                                  int (*adc_init)(void),
-                                  int (*adc_start)(void),
-                                  int (*adc_stop)(void),
-                                  int (*adc_set_callback)(void (*callback)(size_t size)),
-                                  int (*adc_set_sample_rate)(int rate),
-                                  int (*adc_set_sample_size)(int size),
-                                  int (*adc_get_samples)(uint16_t *buffer, size_t size, int *samples_read));
-
 #endif // FSK_DECODER_H
