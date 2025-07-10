@@ -6,11 +6,9 @@
 #include <math.h>
 #include "goertzel.h"
 #include "c-logger.h"
-// #include "adc_hal.h" // TODO: Turn adc_hal into an injectable interface
 
 #define BUFFER_SIZE_MULTIPLYER 2 // Buffer size multiplier for ADC samples
 
-static void (*bit_callback)(int bit) = NULL;
 static int baud_rate = 8;                 // Default baud rate
 static int sample_rate = 2400;            // 2400Hz Default sample rate
 static float freq_0 = 1100.0f;            // Default frequency for bit 0
@@ -25,10 +23,10 @@ static int adc_sample_buffer_size = 0; // Buffer size for ADC samples
 static int adc_sample_size = 0;        // Size of the ADC samples
 
 static void adc_sample_callback(size_t size);
-static void _process_samples(const uint16_t *samples, size_t num_samples);
+static void _process_samples(fsk_decoder_handle_t *handle, const uint16_t *samples, size_t num_samples);
 static int _calculate_window_offset(void);
 
-int fsk_decoder_init(void)
+int fsk_decoder_init(fsk_decoder_handle_t *handle)
 {
     int ret = 0;
 
@@ -45,21 +43,19 @@ int fsk_decoder_init(void)
         goto failed;
     }
 
-    // TODO: Turn adc_hal into an injectable interface
-    // if (adc_hal_init())
-    // {
-    //     LOG_ERROR("Failed to initialize ADC HAL");
-    //     ret = -1;
-    //     goto failed;
-    // }
+    if (handle->adc_init())
+    {
+        LOG_ERROR("Failed to initialize ADC");
+        ret = -1;
+        goto failed;
+    }
 
-    // TODO: Turn adc_hal into an injectable interface
-    // if (adc_hal_set_callback(adc_sample_callback))
-    // {
-    //     LOG_ERROR("Failed to set ADC callback");
-    //     ret = -1;
-    //     goto failed;
-    // }
+    if (handle->adc_set_callback(adc_sample_callback))
+    {
+        LOG_ERROR("Failed to set ADC sample callback");
+        ret = -1;
+        goto failed;
+    }
 
     initialized = true;
 
@@ -67,7 +63,7 @@ failed:
     return ret;
 }
 
-int fsk_decoder_deinit(void)
+int fsk_decoder_deinit(fsk_decoder_handle_t *handle)
 {
     int ret = 0;
 
@@ -75,24 +71,7 @@ failed:
     return ret;
 }
 
-int fsk_decoder_set_bit_callback(void (*callback)(int bit))
-{
-    int ret = 0;
-
-    if (callback == NULL)
-    {
-        LOG_ERROR("Callback function cannot be NULL");
-        ret = -1;
-        goto failed;
-    }
-
-    bit_callback = callback;
-
-failed:
-    return ret;
-}
-
-int fsk_decoder_set_baud_rate(int _baud_rate)
+int fsk_decoder_set_baud_rate(fsk_decoder_handle_t *handle, int _baud_rate)
 {
     int ret = 0;
 
@@ -109,7 +88,7 @@ failed:
     return ret;
 }
 
-int fsk_decoder_set_sample_rate(int _sample_rate)
+int fsk_decoder_set_sample_rate(fsk_decoder_handle_t *handle, int _sample_rate)
 {
     int ret = 0;
 
@@ -126,13 +105,13 @@ failed:
     return ret;
 }
 
-int fsk_decoder_set_frequencies(float _freq_0, float _freq_1)
+int fsk_decoder_set_frequencies(fsk_decoder_handle_t *handle, float _freq_0, float _freq_1)
 {
     int ret = 0;
 
     if (!initialized)
     {
-        if (fsk_decoder_init())
+        if (fsk_decoder_init(handle))
         {
             LOG_ERROR("Failed to initialize FSK decoder");
             ret = -1;
@@ -161,13 +140,13 @@ failed:
     return ret;
 }
 
-int fsk_decoder_set_power_threshold(float _threshold)
+int fsk_decoder_set_power_threshold(fsk_decoder_handle_t *handle, float _threshold)
 {
     int ret = 0;
 
     if (!initialized)
     {
-        if (fsk_decoder_init())
+        if (fsk_decoder_init(handle))
         {
             LOG_ERROR("Failed to initialize FSK decoder");
             ret = -1;
@@ -188,13 +167,13 @@ failed:
     return ret;
 }
 
-int fsk_decoder_start(void)
+int fsk_decoder_start(fsk_decoder_handle_t *handle)
 {
     int ret = 0;
 
     if (!initialized)
     {
-        if (fsk_decoder_init())
+        if (fsk_decoder_init(handle))
         {
             LOG_ERROR("Failed to initialize FSK decoder");
             ret = -1;
@@ -208,23 +187,21 @@ int fsk_decoder_start(void)
         return 0; // Already running
     }
 
-    // TODO: Turn adc_hal into an injectable interface
-    // if (adc_hal_set_sample_rate(sample_rate))
-    // {
-    //     LOG_ERROR("Failed to set ADC sample rate: %d", sample_rate);
-    //     ret = -1;
-    //     goto failed;
-    // }
+    if (handle->adc_set_sample_rate(sample_rate))
+    {
+        LOG_ERROR("Failed to set ADC sample rate: %d", sample_rate);
+        ret = -1;
+        goto failed;
+    }
 
     adc_sample_size = sample_rate / baud_rate;
 
-    // TODO: Turn adc_hal into an injectable interface
-    // if (adc_hal_set_sample_size(adc_sample_size))
-    // {
-    //     LOG_ERROR("Failed to set ADC sample size: %d", baud_rate);
-    //     ret = -1;
-    //     goto failed;
-    // }
+    if (handle->adc_set_sample_size(adc_sample_size))
+    {
+        LOG_ERROR("Failed to set ADC sample size: %d", adc_sample_size);
+        ret = -1;
+        goto failed;
+    }
 
     int buffer_size = adc_sample_size * BUFFER_SIZE_MULTIPLYER; // Gives some extra space for bit alignment
 
@@ -253,26 +230,25 @@ int fsk_decoder_start(void)
     }
 
     // Start the ADC sampling
-    // TODO: Turn adc_hal into an injectable interface
-    // if (adc_hal_start())
-    // {
-    //     LOG_ERROR("Failed to start ADC sampling");
-    //     ret = -1;
-    //     goto failed;
-    // }
+    if (handle->adc_start())
+    {
+        LOG_ERROR("Failed to start ADC sampling");
+        ret = -1;
+        goto failed;
+    }
 
     running = true;
 failed:
     return ret;
 }
 
-int fsk_decoder_stop(void)
+int fsk_decoder_stop(fsk_decoder_handle_t *handle)
 {
     int ret = 0;
 
     if (!initialized)
     {
-        if (fsk_decoder_init())
+        if (fsk_decoder_init(handle))
         {
             LOG_ERROR("Failed to initialize FSK decoder");
             ret = -1;
@@ -287,13 +263,12 @@ int fsk_decoder_stop(void)
     }
 
     // Stop the ADC sampling
-    // TODO: Turn adc_hal into an injectable interface
-    // if (adc_hal_stop())
-    // {
-    //     LOG_ERROR("Failed to stop ADC sampling");
-    //     ret = -1;
-    //     goto failed;
-    // }
+    if (handle->adc_stop())
+    {
+        LOG_ERROR("Failed to stop ADC sampling");
+        ret = -1;
+        goto failed;
+    }
 
     running = false;
 
@@ -301,7 +276,7 @@ failed:
     return ret;
 }
 
-int fsk_decoder_is_running(void)
+int fsk_decoder_is_running(fsk_decoder_handle_t *handle)
 {
     if (!initialized)
     {
@@ -312,13 +287,13 @@ int fsk_decoder_is_running(void)
     return running ? 1 : 0; // Return 1 if running, 0 if not
 }
 
-int fsk_decoder_process(void)
+int fsk_decoder_process(fsk_decoder_handle_t *handle)
 {
     int ret = 0;
 
     if (!initialized)
     {
-        if (fsk_decoder_init())
+        if (fsk_decoder_init(handle))
         {
             LOG_ERROR("Failed to initialize FSK decoder");
             ret = -1;
@@ -342,13 +317,14 @@ int fsk_decoder_process(void)
 
     adc_samples_ready = false; // Reset the flag
     int samples_read = 0;
-    // TODO: Turn adc_hal into an injectable interface
-    // if (adc_hal_get_samples(adc_samples + (adc_sample_buffer_size - adc_sample_size), adc_sample_size, &samples_read)) // Read new samples into the end of the buffer
-    // {
-    //     LOG_ERROR("Failed to get ADC samples");
-    //     ret = -1;
-    //     goto failed;
-    // }
+
+    // Get new ADC samples
+    if (handle->adc_get_samples(adc_samples + (adc_sample_buffer_size - adc_sample_size), adc_sample_size, &samples_read))
+    {
+        LOG_ERROR("Failed to get ADC samples");
+        ret = -1;
+        goto failed;
+    }
     if (samples_read != adc_sample_size)
     {
         LOG_WARN("Expected %d samples, but got %d", adc_sample_size, samples_read);
@@ -358,7 +334,49 @@ int fsk_decoder_process(void)
 
     LOG_DEBUG("Processing %d ADC samples", adc_sample_size);
     int window_offset = _calculate_window_offset();
-    _process_samples(adc_samples + window_offset, adc_sample_size);
+    _process_samples(handle, adc_samples + window_offset, adc_sample_size);
+
+failed:
+    return ret;
+}
+
+int fsk_decoder_set_adc_callbacks(fsk_decoder_handle_t *handle,
+                                  int (*adc_init)(void),
+                                  int (*adc_start)(void),
+                                  int (*adc_stop)(void),
+                                  int (*adc_set_callback)(void (*callback)(size_t size)),
+                                  int (*adc_set_sample_rate)(int rate),
+                                  int (*adc_set_sample_size)(int size),
+                                  int (*adc_get_samples)(uint16_t *buffer, size_t size, int *samples_read))
+{
+    int ret = 0;
+
+    if (!initialized)
+    {
+        if (fsk_decoder_init(handle))
+        {
+            LOG_ERROR("Failed to initialize FSK decoder");
+            ret = -1;
+            goto failed;
+        }
+    }
+
+    if (adc_init == NULL || adc_start == NULL || adc_stop == NULL || adc_set_callback == NULL ||
+        adc_set_sample_rate == NULL || adc_set_sample_size == NULL || adc_get_samples == NULL)
+    {
+        LOG_ERROR("ADC callback functions cannot be NULL");
+        ret = -1;
+        goto failed;
+    }
+
+    // Set the ADC callbacks
+    handle->adc_init = adc_init;
+    handle->adc_start = adc_start;
+    handle->adc_stop = adc_stop;
+    handle->adc_set_callback = adc_set_callback;
+    handle->adc_set_sample_rate = adc_set_sample_rate;
+    handle->adc_set_sample_size = adc_set_sample_size;
+    handle->adc_get_samples = adc_get_samples;
 
 failed:
     return ret;
@@ -373,7 +391,7 @@ static void adc_sample_callback(size_t size)
     adc_samples_ready = true;
 }
 
-static void _process_samples(const uint16_t *samples, size_t num_samples)
+static void _process_samples(fsk_decoder_handle_t *handle, const uint16_t *samples, size_t num_samples)
 {
     float power_0 = 0.0f;
     float power_1 = 0.0f;
@@ -409,13 +427,13 @@ static void _process_samples(const uint16_t *samples, size_t num_samples)
     }
 
     LOG_DEBUG("Detected bit: %d", bit);
-    if (!bit_callback)
+    if (!handle->bit_callback)
     {
         LOG_ERROR("Bit callback not set");
         return; // No callback to handle detected bits
     }
 
-    bit_callback(bit); // Call the callback with the detected bit
+    handle->bit_callback(bit); // Call the callback with the detected bit
 }
 
 static int _calculate_window_offset(void)

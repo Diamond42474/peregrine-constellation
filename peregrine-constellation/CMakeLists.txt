@@ -25,6 +25,7 @@ add_library(peregrine-constellation INTERFACE)
 target_include_directories(peregrine-constellation
     INTERFACE
         ${CMAKE_CURRENT_LIST_DIR}
+        ${CMAKE_CURRENT_LIST_DIR}/include/utils
 )
 
 # Link the internal implementation to the public interface
