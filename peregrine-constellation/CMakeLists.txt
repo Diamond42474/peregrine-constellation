@@ -2,8 +2,9 @@
 add_library(peregrine-constellation-impl STATIC
     ${CMAKE_CURRENT_LIST_DIR}/src/peregrine-constellation.c
     ${CMAKE_CURRENT_LIST_DIR}/src/packet.c
-    ${CMAKE_CURRENT_LIST_DIR}/src/utils/fsk_decoder.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/decoding/fsk_decoder.c
     ${CMAKE_CURRENT_LIST_DIR}/src/utils/goertzel.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/decoding/byte_assembler.c
 )
 
 # Internal include dirs, not exposed to consumers
@@ -11,6 +12,7 @@ target_include_directories(peregrine-constellation-impl
     PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
         ${CMAKE_CURRENT_LIST_DIR}/include
+        ${CMAKE_CURRENT_LIST_DIR}/include/decoding
         ${CMAKE_CURRENT_LIST_DIR}/include/utils
 )
 
@@ -25,7 +27,8 @@ add_library(peregrine-constellation INTERFACE)
 target_include_directories(peregrine-constellation
     INTERFACE
         ${CMAKE_CURRENT_LIST_DIR}
-        ${CMAKE_CURRENT_LIST_DIR}/include/utils
+        ${CMAKE_CURRENT_LIST_DIR}/include/decoding
+
 )
 
 # Link the internal implementation to the public interface
