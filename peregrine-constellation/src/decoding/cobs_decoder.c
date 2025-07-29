@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "c-logger.h"
+
 #define FRAME_BUFFER_SIZE 256
 
 static bool initialized = false;
@@ -76,15 +78,21 @@ void cobs_decoder_input(uint8_t byte)
         }
     }
 
+    LOG_INFO("COBS Decoder Input: %02X", byte);
+
     if (code == 0)
     {
         // Start of a new block: code byte indicates how many bytes follow
         if (byte == 0)
         {
+            LOG_INFO("COBS Decoder: Zero byte received, resetting decoder");
             // End of frame delimiter
             if (write_index > 0 && frame_callback)
             {
                 frame_callback(frame_buffer, write_index);
+            } else
+            {
+                LOG_ERROR("COBS Decoder: No data to process, resetting decoder");
             }
             // Reset for next frame
             cobs_decoder_reset();
@@ -96,6 +104,7 @@ void cobs_decoder_input(uint8_t byte)
 
         if (write_index + remaining >= FRAME_BUFFER_SIZE)
         {
+            LOG_ERROR("COBS Decoder: Frame buffer overflow, resetting decoder");
             // Overflow - reset
             cobs_decoder_reset();
             return;
