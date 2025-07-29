@@ -9,11 +9,11 @@
 
 #define BUFFER_SIZE_MULTIPLYER 2 // Buffer size multiplier for ADC samples
 
-static int baud_rate = 8;                 // Default baud rate
-static int sample_rate = 2400;            // 2400Hz Default sample rate
-static float freq_0 = 1100.0f;            // Default frequency for bit 0
-static float freq_1 = 2200.0f;            // Default frequency for bit 1
-static float power_threshold = 100000.0f; // Default power threshold
+static int baud_rate = 8;                  // Default baud rate
+static int sample_rate = 4400;             // 2400Hz Default sample rate
+static float freq_0 = 1100.0f;             // Default frequency for bit 0
+static float freq_1 = 2200.0f;             // Default frequency for bit 1
+static float power_threshold = 1000000.0f; // Default power threshold
 static bool initialized = false;
 static bool running = false;
 static bool adc_samples_ready = false;
@@ -333,7 +333,7 @@ int fsk_decoder_process(fsk_decoder_handle_t *handle)
     }
 
     LOG_DEBUG("Processing %d ADC samples", adc_sample_size);
-    int window_offset = _calculate_window_offset();
+    int window_offset = 0; //_calculate_window_offset();
     _process_samples(handle, adc_samples + window_offset, adc_sample_size);
 
 failed:
@@ -408,10 +408,12 @@ static void _process_samples(fsk_decoder_handle_t *handle, const uint16_t *sampl
         return;
     }
 
-    LOG_DEBUG("Power for freq_0: %f, Power for freq_1: %f", power_0, power_1);
+    //LOG_INFO("freq_0: %f, freq_1: %f", power_0, power_1);
+    //LOG_INFO("f0: %f, f1: %f", freq_0, freq_1);
 
     if (power_0 < power_threshold && power_1 < power_threshold)
     {
+        LOG_DEBUG("No significant signal detected (power_0: %f, power_1: %f)", power_0, power_1);
         return; // No significant signal detected
     }
 
@@ -426,7 +428,7 @@ static void _process_samples(fsk_decoder_handle_t *handle, const uint16_t *sampl
         bit = 1; // Detected frequency 1
     }
 
-    LOG_DEBUG("Detected bit: %d", bit);
+    //LOG_INFO("Detected bit: %d", bit);
     if (!handle->bit_callback)
     {
         LOG_ERROR("Bit callback not set");
