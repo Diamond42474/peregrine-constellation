@@ -3,6 +3,13 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include "c-logger.h"
+
+static const unsigned char PREAMBLE_BYTE = 0xAA; // Change to your preamble
+static uint8_t preamble_buffer = 0;
+static int preamble_bits = 0;
+static bool preamble_found = false;
+
 static unsigned char current_byte = 0;
 static int bits_collected = 0;
 static bit_order_t bit_order = BIT_ORDER_LSB_FIRST;
@@ -13,7 +20,7 @@ int byte_assembler_init(void)
 {
     current_byte = 0;
     bits_collected = 0;
-    bit_order = BIT_ORDER_LSB_FIRST;
+    bit_order = BIT_ORDER_MSB_FIRST;
     byte_callback = NULL;
     initialized = true;
     return 0;
@@ -59,6 +66,9 @@ int byte_assembler_reset(void)
 
     current_byte = 0;
     bits_collected = 0;
+    preamble_buffer = 0;
+    preamble_bits = 0;
+    preamble_found = false;
     return 0;
 }
 
@@ -74,11 +84,28 @@ void byte_assembler_bit_callback(int bit)
         return;
     }
 
+    // LOG_INFO("Received bit: %d", bit);
+
     if (bit != 0 && bit != 1)
     {
         return;
     } // ignore invalid bits
 
+    // Shift bit into preamble buffer
+    preamble_buffer = (preamble_buffer << 1) | (bit & 0x01);
+    preamble_bits = (preamble_bits < 8) ? preamble_bits + 1 : 8;
+
+    if (preamble_buffer == PREAMBLE_BYTE)
+    {
+        preamble_found = true;
+        LOG_INFO("Preamble detected, aligning bytes");
+        // Reset byte assembly state
+        current_byte = 0;
+        bits_collected = 0;
+        return;
+    }
+
+    // Now assemble bytes as normal
     if (bit_order == BIT_ORDER_LSB_FIRST)
     {
         current_byte |= (bit & 0x01) << bits_collected;
@@ -96,8 +123,6 @@ void byte_assembler_bit_callback(int bit)
         {
             byte_callback(current_byte);
         }
-
-        // reset for next byte
         current_byte = 0;
         bits_collected = 0;
     }
