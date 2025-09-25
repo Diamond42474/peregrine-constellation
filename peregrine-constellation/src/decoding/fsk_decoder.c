@@ -416,6 +416,7 @@ static void _process_samples(fsk_decoder_handle_t *handle, const uint16_t *sampl
         LOG_DEBUG("No significant signal detected (power_0: %f, power_1: %f)", power_0, power_1);
         return; // No significant signal detected
     }
+    LOG_DEBUG("Significant signal detected (power_0: %f, power_1: %f)", power_0, power_1);
 
     int bit = -1;
 
