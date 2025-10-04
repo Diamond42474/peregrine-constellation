@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "c-logger.h"
+#include "cobs_decoder.h"
 
 static const unsigned char PREAMBLE_BYTE = 0xAA; // Change to your preamble
 static uint8_t preamble_buffer = 0;
@@ -102,6 +103,8 @@ void byte_assembler_bit_callback(int bit)
         // Reset byte assembly state
         current_byte = 0;
         bits_collected = 0;
+        // reset cobs decoder state as well
+        cobs_decoder_reset();
         return;
     }
 
