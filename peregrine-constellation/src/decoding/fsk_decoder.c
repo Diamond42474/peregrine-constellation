@@ -6,34 +6,28 @@
 #include <math.h>
 #include "goertzel.h"
 #include "c-logger.h"
+#include "circular_buffer.h"
 
-#define BUFFER_SIZE_MULTIPLYER 2 // Buffer size multiplier for ADC samples
+// #define BUFFER_SIZE_MULTIPLYER 2 // Buffer size multiplier for ADC samples
+// #define BIT_BUFFER_SIZE 1024     // Size of the bit buffer
 
-static int baud_rate = 8;                  // Default baud rate
-static int sample_rate = 4400;             // 2400Hz Default sample rate
-static float freq_0 = 1100.0f;             // Default frequency for bit 0
-static float freq_1 = 2200.0f;             // Default frequency for bit 1
-static float power_threshold = 1000000.0f; // Default power threshold
-static bool initialized = false;
-static bool running = false;
-static bool adc_samples_ready = false;
-
-static uint16_t *adc_samples = NULL;   // Buffer for ADC samples, size can be adjusted
-static int adc_sample_buffer_size = 0; // Buffer size for ADC samples
-static int adc_sample_size = 0;        // Size of the ADC samples
-
-static void adc_sample_callback(size_t size);
-static void _process_samples(fsk_decoder_handle_t *handle, const uint16_t *samples, size_t num_samples);
-static int _calculate_window_offset(void);
+static int _process_samples(fsk_decoder_handle_t *handle);
+static int _calculate_window_offset(fsk_decoder_handle_t *handle, uint16_t *samples, size_t num_samples);
 
 int fsk_decoder_init(fsk_decoder_handle_t *handle)
 {
     int ret = 0;
 
-    if (initialized)
+    if (!handle)
     {
-        LOG_WARN("FSK decoder already initialized");
-        return 0; // Already initialized
+        LOG_ERROR("FSK decoder handle is NULL");
+        return -1;
+    }
+
+    if (handle->state != FSK_DECODER_STATE_UNINITIALIZED)
+    {
+        LOG_WARN("FSK decoder is already initialized or in the process of initializing");
+        return 0;
     }
 
     if (goertzel_init())
@@ -43,21 +37,7 @@ int fsk_decoder_init(fsk_decoder_handle_t *handle)
         goto failed;
     }
 
-    if (handle->adc_init())
-    {
-        LOG_ERROR("Failed to initialize ADC");
-        ret = -1;
-        goto failed;
-    }
-
-    if (handle->adc_set_callback(adc_sample_callback))
-    {
-        LOG_ERROR("Failed to set ADC sample callback");
-        ret = -1;
-        goto failed;
-    }
-
-    initialized = true;
+    handle->state = FSK_DECODER_STATE_INITIALIZING;
 
 failed:
     return ret;
@@ -67,39 +47,106 @@ int fsk_decoder_deinit(fsk_decoder_handle_t *handle)
 {
     int ret = 0;
 
-failed:
-    return ret;
-}
-
-int fsk_decoder_set_baud_rate(fsk_decoder_handle_t *handle, int _baud_rate)
-{
-    int ret = 0;
-
-    if (_baud_rate <= 0)
+    if (!handle)
     {
-        LOG_ERROR("Invalid baud rate: %d", _baud_rate);
+        LOG_ERROR("FSK decoder handle is NULL");
+        return -1;
+    }
+
+    if (handle->state == FSK_DECODER_STATE_UNINITIALIZED)
+    {
+        LOG_WARN("FSK decoder is already uninitialized");
+        return 0;
+    }
+
+    if (circular_buffer_deinit(&handle->bit_buffer) != 0)
+    {
+        LOG_ERROR("Failed to deinitialize bit buffer");
         ret = -1;
         goto failed;
     }
 
-    baud_rate = _baud_rate;
+    if (circular_buffer_deinit(&handle->sample_buffer) != 0)
+    {
+        LOG_ERROR("Failed to deinitialize sample buffer");
+        ret = -1;
+        goto failed;
+    }
+
+    handle->state = FSK_DECODER_STATE_UNINITIALIZED;
 
 failed:
     return ret;
 }
 
-int fsk_decoder_set_sample_rate(fsk_decoder_handle_t *handle, int _sample_rate)
+int fsk_decoder_set_bit_buffer_size(fsk_decoder_handle_t *handle, size_t bit_buffer_size)
 {
     int ret = 0;
 
-    if (sample_rate <= 0)
+    if (!handle)
     {
-        LOG_ERROR("Invalid sample rate: %d", sample_rate);
+        LOG_ERROR("FSK decoder handle is NULL");
         ret = -1;
         goto failed;
     }
 
-    sample_rate = _sample_rate;
+    handle->configs.bit_buffer_size = bit_buffer_size;
+
+failed:
+    return ret;
+}
+
+int fsk_decoder_set_sample_buffer_multiplier(fsk_decoder_handle_t *handle, size_t multiplier)
+{
+    int ret = 0;
+
+    if (!handle)
+    {
+        LOG_ERROR("FSK decoder handle is NULL");
+        ret = -1;
+        goto failed;
+    }
+
+    if (multiplier == 0)
+    {
+        LOG_ERROR("Sample buffer multiplier must be greater than 0");
+        ret = -1;
+        goto failed;
+    }
+
+    handle->configs.sample_buffer_multiplier = multiplier;
+
+failed:
+    return ret;
+}
+
+int fsk_decoder_set_rates(fsk_decoder_handle_t *handle, int _sample_size, int _sample_rate)
+{
+    int ret = 0;
+
+    if (!handle)
+    {
+        LOG_ERROR("FSK decoder handle is NULL");
+        ret = -1;
+        goto failed;
+    }
+
+    if (_sample_size <= 0)
+    {
+        LOG_ERROR("Invalid sample size: %d", _sample_size);
+        ret = -1;
+        goto failed;
+    }
+
+    if (_sample_rate <= 0)
+    {
+        LOG_ERROR("Invalid sample rate: %d", handle->configs.sample_rate);
+        ret = -1;
+        goto failed;
+    }
+
+    handle->configs.sample_rate = _sample_rate;
+    handle->configs.sample_size = _sample_size;
 
 failed:
     return ret;
@@ -109,14 +156,11 @@ int fsk_decoder_set_frequencies(fsk_decoder_handle_t *handle, float _freq_0, flo
 {
     int ret = 0;
 
-    if (!initialized)
+    if (!handle)
     {
-        if (fsk_decoder_init(handle))
-        {
-            LOG_ERROR("Failed to initialize FSK decoder");
-            ret = -1;
-            goto failed;
-        }
+        LOG_ERROR("FSK decoder handle is NULL");
+        ret = -1;
+        goto failed;
     }
 
     if (_freq_0 <= 0 || _freq_1 <= 0)
@@ -133,8 +177,8 @@ int fsk_decoder_set_frequencies(fsk_decoder_handle_t *handle, float _freq_0, flo
         goto failed;
     }
 
-    freq_0 = _freq_0;
-    freq_1 = _freq_1;
+    handle->configs.freq_0 = _freq_0;
+    handle->configs.freq_1 = _freq_1;
 
 failed:
     return ret;
@@ -144,14 +188,11 @@ int fsk_decoder_set_power_threshold(fsk_decoder_handle_t *handle, float _thresho
 {
     int ret = 0;
 
-    if (!initialized)
+    if (!handle)
     {
-        if (fsk_decoder_init(handle))
-        {
-            LOG_ERROR("Failed to initialize FSK decoder");
-            ret = -1;
-            goto failed;
-        }
+        LOG_ERROR("FSK decoder handle is NULL");
+        ret = -1;
+        goto failed;
     }
 
     if (_threshold <= 0)
@@ -161,224 +202,132 @@ int fsk_decoder_set_power_threshold(fsk_decoder_handle_t *handle, float _thresho
         goto failed;
     }
 
-    power_threshold = _threshold;
+    handle->configs.power_threshold = _threshold;
 
 failed:
     return ret;
 }
 
-int fsk_decoder_start(fsk_decoder_handle_t *handle)
+int fsk_decoder_process(fsk_decoder_handle_t *handle, const uint16_t *samples, size_t num_samples)
 {
     int ret = 0;
 
-    if (!initialized)
+    if (!handle || !samples || num_samples == 0)
     {
-        if (fsk_decoder_init(handle))
+        LOG_ERROR("Invalid parameters to process samples");
+        return -1;
+    }
+
+    // LOG_DEBUG("Processing %zu samples", num_samples);
+    for (size_t i = 0; i < num_samples; i++)
+    {
+        if (circular_buffer_push(&handle->sample_buffer, &samples[i]) != 0)
         {
-            LOG_ERROR("Failed to initialize FSK decoder");
-            ret = -1;
-            goto failed;
+            LOG_ERROR("Failed to push sample to buffer");
+            return -1;
         }
     }
 
-    if (running)
+    return ret;
+}
+
+int fsk_decoder_task(fsk_decoder_handle_t *handle)
+{
+    int ret = 0;
+
+    if (!handle)
     {
-        LOG_WARN("FSK decoder already running");
-        return 0; // Already running
+        LOG_ERROR("FSK decoder handle is NULL");
+        return -1;
     }
 
-    if (handle->adc_set_sample_rate(sample_rate))
+    switch (handle->state)
     {
-        LOG_ERROR("Failed to set ADC sample rate: %d", sample_rate);
+    case FSK_DECODER_STATE_UNINITIALIZED:
+        LOG_ERROR("FSK decoder is uninitialized");
         ret = -1;
-        goto failed;
-    }
-
-    adc_sample_size = sample_rate / baud_rate;
-
-    if (handle->adc_set_sample_size(adc_sample_size))
-    {
-        LOG_ERROR("Failed to set ADC sample size: %d", adc_sample_size);
-        ret = -1;
-        goto failed;
-    }
-
-    int buffer_size = adc_sample_size * BUFFER_SIZE_MULTIPLYER; // Gives some extra space for bit alignment
-
-    if (adc_sample_buffer_size == 0) // Allocate buffer if not already allocated
-    {
-        adc_samples = calloc(buffer_size, sizeof(uint16_t));
-        if (adc_samples == NULL)
+        break;
+    case FSK_DECODER_STATE_INITIALIZING:
+        // Initialize circular buffers
+        if (circular_buffer_dynamic_init(&handle->bit_buffer, sizeof(bool), handle->configs.bit_buffer_size) != 0)
         {
-            LOG_ERROR("Failed to allocate memory for ADC sample buffer");
+            LOG_ERROR("Failed to initialize bit buffer");
             ret = -1;
             goto failed;
         }
-        adc_sample_buffer_size = buffer_size;
-    }
-    else if (adc_sample_buffer_size < buffer_size) // Resize the buffer if it's smaller than required
-    {
-        free(adc_samples);
-        adc_samples = calloc(buffer_size, sizeof(uint16_t));
-        if (adc_samples == NULL)
+        if (circular_buffer_dynamic_init(&handle->sample_buffer, sizeof(uint16_t), handle->configs.sample_size * handle->configs.sample_buffer_multiplier) != 0)
         {
-            LOG_ERROR("Failed to reallocate memory for ADC sample buffer");
+            LOG_ERROR("Failed to initialize sample buffer");
             ret = -1;
             goto failed;
         }
-        adc_sample_buffer_size = buffer_size;
-    }
+        handle->state = FSK_DECODER_STATE_IDLE;
+        LOG_INFO("FSK decoder initialized");
+        break;
+    case FSK_DECODER_STATE_IDLE:
+        if (!circular_buffer_is_empty(&handle->sample_buffer))
+        {
+            handle->state = FSK_DECODER_STATE_DECODING;
+        }
 
-    // Start the ADC sampling
-    if (handle->adc_start())
-    {
-        LOG_ERROR("Failed to start ADC sampling");
+        break;
+    case FSK_DECODER_STATE_DECODING:
+        if (circular_buffer_size(&handle->sample_buffer) >= handle->configs.sample_size)
+        {
+            if (_process_samples(handle) != 0)
+            {
+                LOG_ERROR("Failed to process samples");
+                ret = -1;
+                goto failed;
+            }
+        }
+        else
+        {
+            handle->state = FSK_DECODER_STATE_IDLE;
+        }
+        break;
+    default:
+        LOG_ERROR("Unknown FSK decoder state");
         ret = -1;
-        goto failed;
+        break;
     }
-
-    running = true;
 failed:
     return ret;
 }
 
-int fsk_decoder_stop(fsk_decoder_handle_t *handle)
+bool fsk_decoder_has_bit(fsk_decoder_handle_t *handle)
+{
+    if (!handle)
+    {
+        LOG_ERROR("FSK decoder handle is NULL");
+        return false;
+    }
+
+    return !circular_buffer_is_empty(&handle->bit_buffer);
+}
+
+int fsk_decoder_get_bit(fsk_decoder_handle_t *handle, bool *bit)
 {
     int ret = 0;
 
-    if (!initialized)
+    if (!handle || !bit)
     {
-        if (fsk_decoder_init(handle))
-        {
-            LOG_ERROR("Failed to initialize FSK decoder");
-            ret = -1;
-            goto failed;
-        }
+        LOG_ERROR("Invalid parameters to get bit");
+        return -1;
     }
 
-    if (!running)
+    if (circular_buffer_is_empty(&handle->bit_buffer))
     {
-        LOG_WARN("FSK decoder not running");
-        return 0; // Already stopped
+        LOG_WARN("No bits available to read");
+        return -1; // No bits available
     }
 
-    // Stop the ADC sampling
-    if (handle->adc_stop())
+    if (circular_buffer_pop(&handle->bit_buffer, &bit) != 0)
     {
-        LOG_ERROR("Failed to stop ADC sampling");
-        ret = -1;
-        goto failed;
+        LOG_ERROR("Failed to pop bit from buffer");
+        return -1;
     }
 
-    running = false;
-
-failed:
-    return ret;
-}
-
-int fsk_decoder_is_running(fsk_decoder_handle_t *handle)
-{
-    if (!initialized)
-    {
-        LOG_WARN("FSK decoder not initialized");
-        return 0; // Not running
-    }
-
-    return running ? 1 : 0; // Return 1 if running, 0 if not
-}
-
-int fsk_decoder_process(fsk_decoder_handle_t *handle)
-{
-    int ret = 0;
-
-    if (!initialized)
-    {
-        if (fsk_decoder_init(handle))
-        {
-            LOG_ERROR("Failed to initialize FSK decoder");
-            ret = -1;
-            goto failed;
-        }
-    }
-
-    if (!running)
-    {
-        LOG_WARN("FSK decoder not running");
-        return 0; // Not running
-    }
-
-    if (!adc_samples_ready)
-    {
-        return 0; // No samples to process
-    }
-
-    // Move old samples to the beginning of the buffer
-    memcpy(adc_samples, adc_samples + adc_sample_size, (adc_sample_buffer_size - adc_sample_size) * sizeof(uint16_t));
-
-    adc_samples_ready = false; // Reset the flag
-    int samples_read = 0;
-
-    // Get new ADC samples
-    if (handle->adc_get_samples(adc_samples + (adc_sample_buffer_size - adc_sample_size), adc_sample_size, &samples_read))
-    {
-        LOG_ERROR("Failed to get ADC samples");
-        ret = -1;
-        goto failed;
-    }
-    if (samples_read != adc_sample_size)
-    {
-        LOG_WARN("Expected %d samples, but got %d", adc_sample_size, samples_read);
-        ret = -1;
-        goto failed;
-    }
-
-    LOG_DEBUG("Processing %d ADC samples", adc_sample_size);
-    int window_offset = 0; //_calculate_window_offset();
-    _process_samples(handle, adc_samples + window_offset, adc_sample_size);
-
-failed:
-    return ret;
-}
-
-int fsk_decoder_set_adc_callbacks(fsk_decoder_handle_t *handle,
-                                  int (*adc_init)(void),
-                                  int (*adc_start)(void),
-                                  int (*adc_stop)(void),
-                                  int (*adc_set_callback)(void (*callback)(size_t size)),
-                                  int (*adc_set_sample_rate)(int rate),
-                                  int (*adc_set_sample_size)(int size),
-                                  int (*adc_get_samples)(uint16_t *buffer, size_t size, int *samples_read))
-{
-    int ret = 0;
-
-    if (!initialized)
-    {
-        if (fsk_decoder_init(handle))
-        {
-            LOG_ERROR("Failed to initialize FSK decoder");
-            ret = -1;
-            goto failed;
-        }
-    }
-
-    if (adc_init == NULL || adc_start == NULL || adc_stop == NULL || adc_set_callback == NULL ||
-        adc_set_sample_rate == NULL || adc_set_sample_size == NULL || adc_get_samples == NULL)
-    {
-        LOG_ERROR("ADC callback functions cannot be NULL");
-        ret = -1;
-        goto failed;
-    }
-
-    // Set the ADC callbacks
-    handle->adc_init = adc_init;
-    handle->adc_start = adc_start;
-    handle->adc_stop = adc_stop;
-    handle->adc_set_callback = adc_set_callback;
-    handle->adc_set_sample_rate = adc_set_sample_rate;
-    handle->adc_set_sample_size = adc_set_sample_size;
-    handle->adc_get_samples = adc_get_samples;
-
-failed:
     return ret;
 }
 
@@ -386,35 +335,31 @@ failed:
 // PRIVATE FUNCTIONS
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-static void adc_sample_callback(size_t size)
+static int _process_samples(fsk_decoder_handle_t *handle)
 {
-    adc_samples_ready = true;
-}
+    int ret = 0;
 
-static void _process_samples(fsk_decoder_handle_t *handle, const uint16_t *samples, size_t num_samples)
-{
     float power_0 = 0.0f;
     float power_1 = 0.0f;
 
-    if (goertzel_compute_power(samples, num_samples, freq_0, sample_rate, &power_0) < 0)
+    if (goertzel_compute_power_circular_buff(&handle->sample_buffer, handle->configs.sample_size, handle->configs.freq_0, handle->configs.sample_rate, &power_0) < 0)
     {
-        LOG_ERROR("Failed to compute power for frequency %f", freq_0);
-        return;
+        LOG_ERROR("Failed to compute power for frequency %f", handle->configs.freq_0);
+        ret = -1;
+        goto failed;
+    }
+    if (goertzel_compute_power_circular_buff(&handle->sample_buffer, handle->configs.sample_size, handle->configs.freq_1, handle->configs.sample_rate, &power_1) < 0)
+    {
+        LOG_ERROR("Failed to compute power for frequency %f", handle->configs.freq_1);
+        ret = -1;
+        goto failed;
     }
 
-    if (goertzel_compute_power(samples, num_samples, freq_1, sample_rate, &power_1) < 0)
-    {
-        LOG_ERROR("Failed to compute power for frequency %f", freq_1);
-        return;
-    }
-
-    //LOG_INFO("freq_0: %f, freq_1: %f", power_0, power_1);
-    //LOG_INFO("f0: %f, f1: %f", freq_0, freq_1);
-
-    if (power_0 < power_threshold && power_1 < power_threshold)
+    if (power_0 < handle->configs.power_threshold && power_1 < handle->configs.power_threshold)
     {
         LOG_DEBUG("No significant signal detected (power_0: %f, power_1: %f)", power_0, power_1);
-        return; // No significant signal detected
+        ret - 2;
+        goto failed;
     }
     LOG_DEBUG("Significant signal detected (power_0: %f, power_1: %f)", power_0, power_1);
 
@@ -429,19 +374,33 @@ static void _process_samples(fsk_decoder_handle_t *handle, const uint16_t *sampl
         bit = 1; // Detected frequency 1
     }
 
-    //LOG_INFO("Detected bit: %d", bit);
-    if (!handle->bit_callback)
+    if (circular_buffer_push(&handle->bit_buffer, &bit))
     {
-        LOG_ERROR("Bit callback not set");
-        return; // No callback to handle detected bits
+        LOG_ERROR("Failed to push bit to buffer");
+        ret = -1;
+        goto failed;
     }
 
-    handle->bit_callback(bit); // Call the callback with the detected bit
+    // Remove processed samples from the buffer
+    uint16_t temp;
+    for (int i = 0; i < handle->configs.sample_size; i++)
+    {
+        if (circular_buffer_pop(&handle->sample_buffer, &temp) != 0)
+        {
+            LOG_ERROR("Failed to pop sample from buffer");
+            ret = -1;
+            goto failed;
+        }
+    }
+
+    return ret;
+failed:
+    return ret;
 }
 
-static int _calculate_window_offset(void)
+static int _calculate_window_offset(fsk_decoder_handle_t *handle, uint16_t *samples, size_t num_samples)
 {
-    int sample_size = adc_sample_size;
+    int sample_size = num_samples;
     const int max_offset_range = sample_size / 4;
 
     // Calculate the offset based off of the offset that gives the greatest power difference
@@ -452,15 +411,15 @@ static int _calculate_window_offset(void)
         float power_0 = 0.0f;
         float power_1 = 0.0f;
 
-        if (goertzel_compute_power(adc_samples + offset, sample_size, freq_0, sample_rate, &power_0) < 0)
+        if (goertzel_compute_power(samples + offset, sample_size, handle->configs.freq_0, handle->configs.sample_rate, &power_0) < 0)
         {
-            LOG_ERROR("Failed to compute power for frequency %f at offset %d", freq_0, offset);
+            LOG_ERROR("Failed to compute power for frequency %f at offset %d", handle->configs.freq_0, offset);
             continue;
         }
 
-        if (goertzel_compute_power(adc_samples + offset, sample_size, freq_1, sample_rate, &power_1) < 0)
+        if (goertzel_compute_power(samples + offset, sample_size, handle->configs.freq_1, handle->configs.sample_rate, &power_1) < 0)
         {
-            LOG_ERROR("Failed to compute power for frequency %f at offset %d", freq_1, offset);
+            LOG_ERROR("Failed to compute power for frequency %f at offset %d", handle->configs.freq_1, offset);
             continue;
         }
 
