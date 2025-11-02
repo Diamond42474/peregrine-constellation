@@ -265,7 +265,11 @@ void _process(cobs_decoder_t *handle)
 static void _cobs(cobs_decoder_t *handle, unsigned char byte)
 {
     LOG_INFO("COBS Decoder Input: %02X", byte);
-
+    if (byte == 0xAA)
+    {
+        _reset(handle);
+        return;
+    }
     if (handle->code == 0)
     {
         // Start of a new block: code byte indicates how many bytes follow
@@ -279,6 +283,7 @@ static void _cobs(cobs_decoder_t *handle, unsigned char byte)
                 message_t msg;
                 memcpy(msg.frame_buffer, handle->frame_buffer, handle->write_index);
                 msg.length = handle->write_index;
+                circular_buffer_push(&handle->output_cb, &msg);
             }
             else
             {
@@ -332,6 +337,7 @@ static int _reset(cobs_decoder_t *handle)
         return -1;
     }
 
+    LOG_INFO("Resetting COBS");
     handle->code = 0;
     handle->remaining = 0;
     handle->write_index = 0;

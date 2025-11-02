@@ -348,6 +348,13 @@ static int _process_bit(byte_assembler_handle_t *handle, bool bit)
         handle->current_byte = 0;
         handle->bits_collected = 0;
 
+        if (circular_buffer_push(&handle->byte_buffer, &handle->preamble_byte))
+        {
+            LOG_ERROR("Failed to push byte to buffer");
+            ret = -1;
+            goto failed;
+        }
+
         // TODO: reset cobs decoder state as well
         return 0;
     }
