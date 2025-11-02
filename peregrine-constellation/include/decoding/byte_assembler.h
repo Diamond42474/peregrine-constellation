@@ -52,5 +52,6 @@ int byte_assembler_get_byte(byte_assembler_handle_t *handle, unsigned char *byte
 int byte_assembler_reset(byte_assembler_handle_t *handle);
 
 int byte_assembler_task(byte_assembler_handle_t *handle);
+bool byte_assembler_busy(byte_assembler_handle_t *handle);
 
 #endif // BYTE_ASSEMBLER_H

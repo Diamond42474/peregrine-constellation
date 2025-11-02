@@ -4,6 +4,16 @@
 #include <string.h>
 #include "c-logger.h"
 
+/**
+ * @brief Initialize a circular buffer with a static buffer.
+ *
+ * @param cb Pointer to the circular buffer handle.
+ * @param buffer Pointer to the static buffer memory.
+ * @param element_size Size of each element in the buffer.
+ * @param max Maximum number of elements in the buffer.
+ *
+ * @return error code: 0 = successful, -1 = failed
+ */
 int circular_buffer_static_init(circular_buffer_t *cb, void *buffer, size_t element_size, size_t max)
 {
     if (!cb || !buffer || element_size == 0 || max == 0)
@@ -24,6 +34,15 @@ int circular_buffer_static_init(circular_buffer_t *cb, void *buffer, size_t elem
     return 0; // Success
 }
 
+/**
+ * @brief Initialize a circular buffer with dynamic memory allocation.
+ *
+ * @param cb Pointer to the circular buffer handle.
+ * @param element_size Size of each element in the buffer.
+ * @param max Maximum number of elements in the buffer.
+ *
+ * @return error code: 0 = successful, -1 = failed
+ */
 int circular_buffer_dynamic_init(circular_buffer_t *cb, size_t element_size, size_t max)
 {
     if (!cb || element_size == 0 || max == 0)
@@ -32,6 +51,7 @@ int circular_buffer_dynamic_init(circular_buffer_t *cb, size_t element_size, siz
         return -1; // Invalid parameters
     }
 
+    LOG_DEBUG("Allocating %zu bytes for circular buffer", element_size * max);
     cb->buffer = malloc(element_size * max);
     if (!cb->buffer)
     {

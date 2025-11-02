@@ -21,12 +21,6 @@ int byte_assembler_init(byte_assembler_handle_t *handle)
         return -1;
     }
 
-    if (handle->state != BYTE_ASSEMBLER_STATE_UNINITIALIZED)
-    {
-        LOG_WARN("Byte assembler is already initialized or in the process of initializing");
-        return 0;
-    }
-
     handle->current_byte = 0;
     handle->bits_collected = 0;
     handle->bit_order = BIT_ORDER_MSB_FIRST;
@@ -141,6 +135,14 @@ int byte_assembler_process_bit(byte_assembler_handle_t *handle, bool bit)
         return -1;
     }
 
+    if (bit)
+    {
+        LOG_DEBUG("Handling 1");
+    }
+    else
+    {
+        LOG_DEBUG("Handling 0");
+    }
     if (circular_buffer_push(&handle->bit_buffer, &bit) != 0)
     {
         LOG_ERROR("Failed to push bit to buffer");
@@ -290,6 +292,17 @@ int byte_assembler_task(byte_assembler_handle_t *handle)
     }
 failed:
     return ret;
+}
+
+bool byte_assembler_busy(byte_assembler_handle_t *handle)
+{
+    if (!handle)
+    {
+        LOG_ERROR("Byte assembler handle is NULL");
+        return false;
+    }
+
+    return handle->state != BYTE_ASSEMBLER_STATE_IDLE;
 }
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=

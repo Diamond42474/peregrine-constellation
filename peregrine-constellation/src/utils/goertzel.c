@@ -7,18 +7,6 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-int goertzel_init(void)
-{
-    // No internal resources to allocate for now
-    return 0;
-}
-
-int goertzel_deinit(void)
-{
-    // No internal resources to free for now
-    return 0;
-}
-
 int goertzel_compute_power(const uint16_t *samples, int num_samples, float target_freq, float sample_rate, float *power)
 {
     if (!samples || num_samples <= 0 || !power || sample_rate <= 0.0f || target_freq <= 0.0f)

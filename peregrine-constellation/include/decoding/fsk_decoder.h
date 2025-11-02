@@ -46,5 +46,6 @@ int fsk_decoder_task(fsk_decoder_handle_t *handle);
 
 bool fsk_decoder_has_bit(fsk_decoder_handle_t *handle);
 int fsk_decoder_get_bit(fsk_decoder_handle_t *handle, bool *bit);
+bool fsk_decoder_busy(fsk_decoder_handle_t *handle);
 
 #endif // FSK_DECODER_H

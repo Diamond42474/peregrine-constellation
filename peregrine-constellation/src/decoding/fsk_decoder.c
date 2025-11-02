@@ -24,19 +24,6 @@ int fsk_decoder_init(fsk_decoder_handle_t *handle)
         return -1;
     }
 
-    if (handle->state != FSK_DECODER_STATE_UNINITIALIZED)
-    {
-        LOG_WARN("FSK decoder is already initialized or in the process of initializing");
-        return 0;
-    }
-
-    if (goertzel_init())
-    {
-        LOG_ERROR("Failed to initialize Goertzel algorithm");
-        ret = -1;
-        goto failed;
-    }
-
     handle->state = FSK_DECODER_STATE_INITIALIZING;
 
 failed:
@@ -218,7 +205,7 @@ int fsk_decoder_process(fsk_decoder_handle_t *handle, const uint16_t *samples, s
         return -1;
     }
 
-    // LOG_DEBUG("Processing %zu samples", num_samples);
+    LOG_DEBUG("Processing %zu samples", num_samples);
     for (size_t i = 0; i < num_samples; i++)
     {
         if (circular_buffer_push(&handle->sample_buffer, &samples[i]) != 0)
@@ -272,9 +259,10 @@ int fsk_decoder_task(fsk_decoder_handle_t *handle)
 
         break;
     case FSK_DECODER_STATE_DECODING:
+        LOG_DEBUG("Decoding samples, current sample buffer size: %zu", circular_buffer_size(&handle->sample_buffer));
         if (circular_buffer_size(&handle->sample_buffer) >= handle->configs.sample_size)
         {
-            if (_process_samples(handle) != 0)
+            if (_process_samples(handle))
             {
                 LOG_ERROR("Failed to process samples");
                 ret = -1;
@@ -316,19 +304,24 @@ int fsk_decoder_get_bit(fsk_decoder_handle_t *handle, bool *bit)
         return -1;
     }
 
-    if (circular_buffer_is_empty(&handle->bit_buffer))
-    {
-        LOG_WARN("No bits available to read");
-        return -1; // No bits available
-    }
-
-    if (circular_buffer_pop(&handle->bit_buffer, &bit) != 0)
+    if (circular_buffer_pop(&handle->bit_buffer, bit) != 0)
     {
         LOG_ERROR("Failed to pop bit from buffer");
         return -1;
     }
 
     return ret;
+}
+
+bool fsk_decoder_busy(fsk_decoder_handle_t *handle)
+{
+    if (!handle)
+    {
+        LOG_ERROR("FSK decoder handle is NULL");
+        return false;
+    }
+
+    return handle->state != FSK_DECODER_STATE_IDLE;
 }
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -359,20 +352,22 @@ static int _process_samples(fsk_decoder_handle_t *handle)
     {
         LOG_DEBUG("No significant signal detected (power_0: %f, power_1: %f)", power_0, power_1);
         ret - 2;
-        goto failed;
+        goto cleanup;
     }
     LOG_DEBUG("Significant signal detected (power_0: %f, power_1: %f)", power_0, power_1);
 
-    int bit = -1;
+    bool bit;
 
     if (power_0 > power_1)
     {
-        bit = 0; // Detected frequency 0
+        bit = false; // Detected frequency 0
     }
     else
     {
-        bit = 1; // Detected frequency 1
+        bit = true; // Detected frequency 1
     }
+
+    LOG_INFO("Bit: %d", bit);
 
     if (circular_buffer_push(&handle->bit_buffer, &bit))
     {
@@ -382,6 +377,7 @@ static int _process_samples(fsk_decoder_handle_t *handle)
     }
 
     // Remove processed samples from the buffer
+cleanup:
     uint16_t temp;
     for (int i = 0; i < handle->configs.sample_size; i++)
     {

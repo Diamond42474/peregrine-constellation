@@ -28,7 +28,8 @@ target_include_directories(peregrine-constellation-impl
 
 target_link_libraries(peregrine-constellation-impl
     # Utility libraries
-    c-logger
+    c-logger     # Logging library
+    m           # Math library
 )
 
 # Create the interface target
