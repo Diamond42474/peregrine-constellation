@@ -83,7 +83,7 @@ int main(void)
 
     // Main processing loop
     LOG_INFO("Starting main processing loop");
-    for (int i = 0; i < 5; i++)
+    while (decoder_busy(&decoder))
     {
         decoder_task(&decoder);
     }
@@ -96,7 +96,7 @@ int main(void)
         decoder_process_samples(&decoder, sample_buffer, fsk_timing.samples_per_bit); // Placeholder for sample input
 
         // Make sure samples are processed
-        for (int i = 0; i < 10; i++)
+        while (decoder_busy(&decoder))
         {
             decoder_task(&decoder);
         }
@@ -105,7 +105,7 @@ int main(void)
         decoder_process_samples(&decoder, sample_buffer, fsk_timing.samples_per_bit); // Placeholder for sample input
 
         // Make sure samples are processed
-        for (int i = 0; i < 10; i++)
+        while (decoder_busy(&decoder))
         {
             decoder_task(&decoder);
         }

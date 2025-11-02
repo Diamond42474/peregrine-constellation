@@ -150,6 +150,8 @@ int byte_assembler_process_bit(byte_assembler_handle_t *handle, bool bit)
         goto failed;
     }
 
+    handle->state = BYTE_ASSEMBLER_STATE_ASSEMBLING;
+
 failed:
     return ret;
 }

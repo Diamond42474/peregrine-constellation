@@ -172,15 +172,35 @@ int decoder_task(decoder_handle_t *handle)
         handle->state = DECODER_STATE_IDLE;
         break;
     case DECODER_STATE_IDLE:
-        // Check if there are samples to process
+
+        // Check if subtasks need to process
+        if (_bit_decoder_busy(handle) || _byte_decoder_busy(handle) || _frame_decoder_busy(handle))
+        {
+            handle->state = DECODER_STATE_PROCESSING;
+        }
+        break;
+    case DECODER_STATE_PROCESSING:
+
+        // Check if subtasks need data transferred
         if (_pending_transfers(handle))
         {
             handle->state = DECODER_STATE_TRANSFERRING;
         }
-        break;
     case DECODER_STATE_TRANSFERRING:
         // Process decoding steps
         _handle_sub_task_transfers(handle);
+        if (!_pending_transfers(handle))
+        {
+            // Check if there's more data to process
+            if (_bit_decoder_busy(handle) || _byte_decoder_busy(handle) || _frame_decoder_busy(handle))
+            {
+                handle->state = DECODER_STATE_PROCESSING;
+            }
+            else
+            {
+                handle->state = DECODER_STATE_IDLE;
+            }
+        }
         break;
     default:
         LOG_ERROR("Unknown decoder state");
@@ -294,6 +314,24 @@ int decoder_get_frame(decoder_handle_t *handle, unsigned char *buffer, size_t bu
 
 failed:
     return ret;
+}
+
+/**
+ * @brief Checks if any sub-modules are busy
+ *
+ * @param handle pointer to decoder handle
+ *
+ * @return if decoder is busy or not
+ */
+bool decoder_busy(decoder_handle_t *handle)
+{
+    if (!handle)
+    {
+        LOG_ERROR("Handle is NULL");
+        return false;
+    }
+
+    return handle->state != DECODER_STATE_IDLE || _bit_decoder_busy(handle) || _byte_decoder_busy(handle) || _frame_decoder_busy(handle);
 }
 
 static void _handle_sub_tasks(decoder_handle_t *handle)

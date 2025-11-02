@@ -215,6 +215,8 @@ int fsk_decoder_process(fsk_decoder_handle_t *handle, const uint16_t *samples, s
         }
     }
 
+    handle->state = FSK_DECODER_STATE_DECODING;
+
     return ret;
 }
 

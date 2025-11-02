@@ -113,6 +113,8 @@ int cobs_decoder_process(cobs_decoder_t *handle, unsigned char byte)
         return -1;
     }
 
+    handle->state = COBS_DECODER_STATE_DECODING;
+
     return 0;
 }
 

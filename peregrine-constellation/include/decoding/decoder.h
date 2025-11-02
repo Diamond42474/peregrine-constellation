@@ -39,6 +39,7 @@ typedef struct
         DECODER_STATE_UNINITIALIZED,
         DECODER_STATE_INITIALIZING,
         DECODER_STATE_IDLE,
+        DECODER_STATE_PROCESSING,
         DECODER_STATE_TRANSFERRING,
     } state;
 } decoder_handle_t;
@@ -54,5 +55,6 @@ int decoder_task(decoder_handle_t *handle);
 int decoder_process_samples(decoder_handle_t *handle, const uint16_t *samples, size_t num_samples);
 bool decoder_frame_available(decoder_handle_t *handle);
 int decoder_get_frame(decoder_handle_t *handle, unsigned char *buffer, size_t buffer_len, size_t *frame_len);
+bool decoder_busy(decoder_handle_t *handle);
 
 #endif // DECODER_H
