@@ -88,22 +88,23 @@ int main(void)
         decoder_task(&decoder);
     }
 
+    // Send 0xAA in the form of alternating sine waves of 1100 and 2200Hz
     for (int j = 0; j < 4; j++)
     {
-        //LOG_WARN("Feeding FQ0 to decoder");
         uint16_t sample_buffer[fsk_timing.samples_per_bit];
         generate_sine_wave(sample_buffer, FQ0, fsk_timing.sample_rate, sizeof(sample_buffer) / sizeof(sample_buffer[0]));
         decoder_process_samples(&decoder, sample_buffer, fsk_timing.samples_per_bit); // Placeholder for sample input
 
+        // Make sure samples are processed
         for (int i = 0; i < 10; i++)
         {
             decoder_task(&decoder);
         }
 
-        //LOG_WARN("Feeding FQ1 to decoder");
         generate_sine_wave(sample_buffer, FQ1, fsk_timing.sample_rate, sizeof(sample_buffer) / sizeof(sample_buffer[0]));
         decoder_process_samples(&decoder, sample_buffer, fsk_timing.samples_per_bit); // Placeholder for sample input
 
+        // Make sure samples are processed
         for (int i = 0; i < 10; i++)
         {
             decoder_task(&decoder);
