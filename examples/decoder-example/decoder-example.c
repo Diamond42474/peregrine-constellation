@@ -32,11 +32,34 @@ void generate_sine_wave(uint16_t *buffer, float frequency, float sample_rate, ui
     }
 }
 
+void send_byte(decoder_handle_t *decoder, unsigned char byte, size_t sample_size, float sample_rate)
+{
+    uint16_t buffer[sample_size];
+    for (int bit = 0; bit < 8; bit++)
+    {
+        if ((byte >> bit) & 1)
+        {
+            // Send 1
+            generate_sine_wave(buffer, FQ1, sample_rate, sample_size);
+        }
+        else
+        {
+            // Send 0
+            generate_sine_wave(buffer, FQ0, sample_rate, sample_size);
+        }
+        decoder_process_samples(decoder, buffer, sample_size);
+        while (decoder_busy(decoder))
+        {
+            decoder_task(decoder);
+        }
+    }
+}
+
 int main(void)
 {
     int ret = 0;
 
-    log_init(LOG_LEVEL_DEBUG);
+    log_init(LOG_LEVEL_INFO);
 
     decoder_handle_t decoder;
     fsk_decoder_handle_t fsk_decoder;
@@ -88,8 +111,8 @@ int main(void)
         decoder_task(&decoder);
     }
 
-    // Send 0xAA in the form of alternating sine waves of 1100 and 2200Hz
-    for (int j = 0; j < 4; j++)
+    // Send half a byte of 0s to test bit alignment mechanism
+    for (int i = 0; i < 4; i++)
     {
         uint16_t sample_buffer[fsk_timing.samples_per_bit];
         generate_sine_wave(sample_buffer, FQ0, fsk_timing.sample_rate, sizeof(sample_buffer) / sizeof(sample_buffer[0]));
@@ -100,16 +123,12 @@ int main(void)
         {
             decoder_task(&decoder);
         }
-
-        generate_sine_wave(sample_buffer, FQ1, fsk_timing.sample_rate, sizeof(sample_buffer) / sizeof(sample_buffer[0]));
-        decoder_process_samples(&decoder, sample_buffer, fsk_timing.samples_per_bit); // Placeholder for sample input
-
-        // Make sure samples are processed
-        while (decoder_busy(&decoder))
-        {
-            decoder_task(&decoder);
-        }
     }
+
+    // Send 0xAA in the form of alternating sine waves of 1100 and 2200Hz
+    send_byte(&decoder, 0xAA, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    send_byte(&decoder, 0xA1, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    send_byte(&decoder, 0xB1, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
 
 failed:
     return ret;
