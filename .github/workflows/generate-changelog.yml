@@ -49,6 +49,6 @@ jobs:
           branch: chore/update-changelog-${{ github.run_id }}
           title: "chore: Update CHANGELOG.md"
           body: |
-            This PR was generated automatically by GitHub Actions and updates the CHANGELOG.md with changes since the last release tag based on Conventional Commits.
+            "This PR was generated automatically by GitHub Actions and updates the CHANGELOG.md with changes since the last release tag based on Conventional Commits."
           labels: automated-changelog, ci
-          paths: CHANGELOG.md
+          path: CHANGELOG.md
