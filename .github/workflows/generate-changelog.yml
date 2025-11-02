@@ -51,4 +51,4 @@ jobs:
           body: |
             "This PR was generated automatically by GitHub Actions and updates the CHANGELOG.md with changes since the last release tag based on Conventional Commits."
           labels: automated-changelog, ci
-          path: CHANGELOG.md
+          add-paths: CHANGELOG.md
