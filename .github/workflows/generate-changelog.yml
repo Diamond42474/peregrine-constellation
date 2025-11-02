@@ -45,7 +45,7 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: chore: generate CHANGELOG.md
+          commit-message: "chore: generate CHANGELOG.md"
           branch: chore/update-changelog-${{ github.run_id }}
           title: "chore: Update CHANGELOG.md"
           body: |
