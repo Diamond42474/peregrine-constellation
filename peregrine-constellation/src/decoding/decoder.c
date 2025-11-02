@@ -1,3 +1,11 @@
+/**
+ * @file decoder.c
+ *
+ * @author Diamond42474
+ *
+ * The decoder handles the pipeline from taking in sine wave samples
+ * to generating frames.
+ */
 #include "decoder.h"
 
 #include "c-logger.h"
@@ -21,6 +29,13 @@ static bool _bit_decoder_busy(decoder_handle_t *handle);
 static bool _byte_decoder_busy(decoder_handle_t *handle);
 static bool _frame_decoder_busy(decoder_handle_t *handle);
 
+/**
+ * @brief Initializes decoder
+ *
+ * @param handle pointer to decoder handle
+ *
+ * @return error code: 0 = successful, -1 = failed
+ */
 int decoder_init(decoder_handle_t *handle)
 {
     if (!handle)
@@ -42,6 +57,15 @@ int decoder_init(decoder_handle_t *handle)
     return 0;
 }
 
+/**
+ * @brief Deinitializes decoder
+ *
+ * @note currently doesn't deinit sub-modules
+ *
+ * @param handle pointer to decoder handle
+ *
+ * @return error code: 0 = successful, -1 = failed
+ */
 int decoder_deinit(decoder_handle_t *handle)
 {
     if (!handle)
@@ -63,6 +87,8 @@ int decoder_deinit(decoder_handle_t *handle)
     handle->bit_decoder_handle = NULL;
     handle->byte_decoder_handle = NULL;
     handle->frame_decoder_handle = NULL;
+
+    // TODO: Deinit sub modules
 
     handle->state = DECODER_STATE_UNINITIALIZED;
 
