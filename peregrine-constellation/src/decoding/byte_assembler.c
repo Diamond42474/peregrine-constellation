@@ -327,7 +327,17 @@ static int _process_bit(byte_assembler_handle_t *handle, bool bit)
     } // ignore invalid bits
 
     // Shift bit into preamble buffer
-    handle->preamble_buffer = (handle->preamble_buffer << 1) | (bit & 0x01);
+    if (handle->bit_order == BIT_ORDER_LSB_FIRST)
+    {
+        // Shift right, new bit goes into MSB
+        handle->preamble_buffer = (handle->preamble_buffer >> 1) | ((bit & 0x01) << 7);
+    }
+    else // MSB first
+    {
+        // Shift left, new bit goes into LSB
+        handle->preamble_buffer = (handle->preamble_buffer << 1) | (bit & 0x01);
+    }
+
     handle->preamble_bits = (handle->preamble_bits < 8) ? handle->preamble_bits + 1 : 8;
 
     if (handle->preamble_buffer == handle->preamble_byte)
