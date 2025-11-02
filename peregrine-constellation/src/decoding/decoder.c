@@ -487,7 +487,7 @@ static void _handle_sub_task_transfers(decoder_handle_t *handle)
 
 static bool _pending_transfers(decoder_handle_t *handle)
 {
-    return _bit_decoder_pending_transfers(handle) || _byte_decoder_pending_transfers(handle) || _frame_decoder_pending_transfers(handle);
+    return _bit_decoder_pending_transfers(handle) || _byte_decoder_pending_transfers(handle);
 }
 
 static bool _bit_decoder_pending_transfers(decoder_handle_t *handle)

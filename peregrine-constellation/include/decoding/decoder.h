@@ -53,7 +53,7 @@ int decoder_set_bit_decoder(decoder_handle_t *handle, bit_decoder_e type, void *
 int decoder_task(decoder_handle_t *handle);
 
 int decoder_process_samples(decoder_handle_t *handle, const uint16_t *samples, size_t num_samples);
-bool decoder_frame_available(decoder_handle_t *handle);
+bool decoder_has_frame(decoder_handle_t *handle);
 int decoder_get_frame(decoder_handle_t *handle, unsigned char *buffer, size_t buffer_len, size_t *frame_len);
 bool decoder_busy(decoder_handle_t *handle);
 
