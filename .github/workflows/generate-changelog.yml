@@ -2,7 +2,7 @@ name: Generate CHANGELOG and open PR
 
 on:
   push:
-    branches: [ test/changelog ]
+    branches: [ main ]
 
 jobs:
   generate-changelog:
