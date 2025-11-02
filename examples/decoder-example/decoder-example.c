@@ -127,8 +127,18 @@ int main(void)
 
     // Send 0xAA in the form of alternating sine waves of 1100 and 2200Hz
     send_byte(&decoder, 0xAA, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
-    send_byte(&decoder, 0xA1, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    send_byte(&decoder, 0x03, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
     send_byte(&decoder, 0xB1, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    send_byte(&decoder, 0x2F, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    send_byte(&decoder, 0x00, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    //send_byte(&decoder, 0x00, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+
+    if (decoder_has_frame(&decoder))
+    {
+        LOG_INFO("Frame available");
+    }else {
+        LOG_INFO("No frame");
+    }
 
 failed:
     return ret;
