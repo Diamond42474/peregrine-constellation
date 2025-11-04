@@ -1,4 +1,4 @@
-##  (2025-11-02)
+##  (2025-11-04)
 
 
 ### Features
@@ -17,4 +17,5 @@
 ### Performance Improvements
 
 * Added state-based flags for grabbing when the decoder is busy or not ([30c9bcc](https://github.com/Diamond42474/peregrine-constellation/commit/30c9bcc2da0f6f1f22c2384aa32c8321b47a0cb8))
+* simplified fsk timing calculator ([9759f0c](https://github.com/Diamond42474/peregrine-constellation/commit/9759f0ca30091dcae83014938cc93e22219ec267))
 
