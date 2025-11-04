@@ -12,12 +12,7 @@
 
 #define FQ0 1100.0f
 #define FQ1 2200.0f
-#define BAUD_RATE 8
-
-#define MIN_ADC_SAMPLE_RATE (FQ1 * 3)
-#define MAX_ADC_SAMPLE_RATE (MIN_ADC_SAMPLE_RATE * 2)
-#define MIN_SAMPLES_PER_BIT 64
-#define MAX_SAMPLES_PER_BIT 1024 * 2
+#define BAUD_RATE 32
 
 void generate_sine_wave(uint16_t *buffer, float frequency, float sample_rate, uint32_t sample_count)
 {
@@ -67,15 +62,8 @@ int main(void)
     cobs_decoder_t cobs_decoder;
 
     // Calculate FSK parameters
-    fsk_timing_t fsk_timing = fsk_calculate_timing(
-        FQ1,
-        FQ0,
-        BAUD_RATE,
-        MIN_ADC_SAMPLE_RATE,
-        MAX_ADC_SAMPLE_RATE,
-        MIN_SAMPLES_PER_BIT,
-        MAX_SAMPLES_PER_BIT);
-    printf("Recommended Sample Rate: %.2f Hz\n", fsk_timing.sample_rate);
+    fsk_timing_t fsk_timing = fsk_calculate_timing(FQ0, FQ1, BAUD_RATE);
+    printf("Recommended Sample Rate: %.2ld Hz\n", fsk_timing.sample_rate);
     printf("Samples per Bit: %zu\n", fsk_timing.samples_per_bit);
 
     // Initialize FSK Decoder
