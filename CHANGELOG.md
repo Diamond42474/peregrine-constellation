@@ -1,10 +1,12 @@
-##  (2025-11-04)
+##  (2025-11-08)
 
 
 ### Features
 
 * Added AI generated workflow ([9d29f0a](https://github.com/Diamond42474/peregrine-constellation/commit/9d29f0aa2b12fc458709e75bc07a2ec3bbeb7349))
 * built out cobs decoder pipeline and integrated it into decoder pipeline manager ([595ef48](https://github.com/Diamond42474/peregrine-constellation/commit/595ef485ccc787c018f1ed9d273846b84c5a52fd))
+* Encoder Pipeline ([cc19e52](https://github.com/Diamond42474/peregrine-constellation/commit/cc19e52ebcaed1f9cfe12796f1faf3b211602dd0))
+* Pipeline for managing frame encoding ([883af6d](https://github.com/Diamond42474/peregrine-constellation/commit/883af6df9f1de4dfc9251751c8d8056eb13c5a0e))
 
 
 ### Bug Fixes
