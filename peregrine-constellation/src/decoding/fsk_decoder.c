@@ -261,8 +261,8 @@ int fsk_decoder_task(fsk_decoder_handle_t *handle)
 
         break;
     case FSK_DECODER_STATE_DECODING:
-        LOG_DEBUG("Decoding samples, current sample buffer size: %zu", circular_buffer_size(&handle->sample_buffer));
-        if (circular_buffer_size(&handle->sample_buffer) >= handle->configs.sample_size)
+        LOG_DEBUG("Decoding samples, current sample buffer size: %zu", circular_buffer_count(&handle->sample_buffer));
+        if (circular_buffer_count(&handle->sample_buffer) >= handle->configs.sample_size)
         {
             if (_process_samples(handle))
             {

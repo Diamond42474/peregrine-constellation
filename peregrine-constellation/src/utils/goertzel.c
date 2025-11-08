@@ -47,9 +47,9 @@ int goertzel_compute_power_circular_buff(const circular_buffer_t *cb, int num_sa
     // Note: do not deallocate the copied buffer
     circular_buffer_t cb_copy = *cb;
 
-    if (circular_buffer_size(&cb_copy) < (size_t)num_samples)
+    if (circular_buffer_count(&cb_copy) < (size_t)num_samples)
     {
-        LOG_ERROR("Not enough samples in circular buffer: required=%d, available=%zu", num_samples, circular_buffer_size(&cb_copy));
+        LOG_ERROR("Not enough samples in circular buffer: required=%d, available=%zu", num_samples, circular_buffer_count(&cb_copy));
         return -1; // Not enough samples
     }
 
