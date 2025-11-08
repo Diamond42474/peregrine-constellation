@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include "circular_buffer.h"
+#include "bit_unpacker.h"
 
 typedef enum
 {
@@ -17,6 +18,7 @@ typedef struct
     size_t input_cb_size;
     circular_buffer_t output_cb;
     size_t output_cb_size;
+    bit_unpacker_t bit_unpacker;
 
     unsigned char preamble_byte; // Normally 0xAA
     size_t preamble_length;      // Number of preamble bytes before each frame
@@ -44,5 +46,6 @@ int encoder_read(encoder_handle_t *handle, bool *bit);
 
 int encoder_task(encoder_handle_t *handle);
 bool encoder_busy(encoder_handle_t *handle);
+bool encoder_data_available(encoder_handle_t *handle);
 
 #endif // ENCODER_H

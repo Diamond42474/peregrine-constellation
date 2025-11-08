@@ -23,7 +23,7 @@ int circular_buffer_deinit(circular_buffer_t *cb);
 int circular_buffer_push(circular_buffer_t *cb, const void *item);
 int circular_buffer_pop(circular_buffer_t *cb, void *item);
 int circular_buffer_peek(circular_buffer_t *cb, void *item);
-size_t circular_buffer_size(circular_buffer_t *cb);
+size_t circular_buffer_count(circular_buffer_t *cb);
 size_t circular_buffer_capacity(circular_buffer_t *cb);
 bool circular_buffer_is_full(circular_buffer_t *cb);
 bool circular_buffer_is_empty(circular_buffer_t *cb);

@@ -149,7 +149,7 @@ int circular_buffer_peek(circular_buffer_t *cb, void *item)
     return 0; // Success
 }
 
-size_t circular_buffer_size(circular_buffer_t *cb)
+size_t circular_buffer_count(circular_buffer_t *cb)
 {
     if (!cb)
     {
