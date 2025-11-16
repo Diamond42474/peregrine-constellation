@@ -201,8 +201,54 @@ void circular_buffer_reset(circular_buffer_t *cb)
         return; // Invalid parameter
     }
 
-    cb->head = 0;
-    cb->tail = 0;
+    // Maintain head position incase it is used for DMA operations
+    cb->tail = cb->head;
     cb->full = false;
     cb->count = 0;
+}
+
+/**
+ * @brief Set the head index of the circular buffer.
+ *
+ * @details This function manually sets the head index of the circular buffer.
+ * It is recommended that this function is used with caution, as it can lead to data corruption.
+ * It is built for use with DMA operations where the head index needs to be updated externally.
+ *
+ * @param cb Pointer to the circular buffer handle.
+ * @param index New head index to set.
+ *
+ * @return error code: 0 = successful, -1 = failed
+ */
+int circular_buffer_set_head(circular_buffer_t *cb, size_t index)
+{
+    if (!cb)
+    {
+        LOG_ERROR("Handle is NULL");
+        return -1; // Invalid parameter
+    }
+
+    if (index >= cb->max)
+    {
+        LOG_ERROR("Index out of bounds for circular buffer set head");
+        return -1; // Index out of bounds
+    }
+
+    cb->head = index;
+    cb->full = (cb->head == cb->tail);
+    
+    // Recalculate count
+    if (cb->full)
+    {
+        cb->count = cb->max;
+    }
+    else if (cb->head >= cb->tail)
+    {
+        cb->count = cb->head - cb->tail;
+    }
+    else
+    {
+        cb->count = cb->max + cb->head - cb->tail;
+    }
+
+    return 0; // Success
 }

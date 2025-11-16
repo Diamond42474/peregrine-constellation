@@ -28,5 +28,6 @@ size_t circular_buffer_capacity(circular_buffer_t *cb);
 bool circular_buffer_is_full(circular_buffer_t *cb);
 bool circular_buffer_is_empty(circular_buffer_t *cb);
 void circular_buffer_reset(circular_buffer_t *cb);
+int circular_buffer_set_head(circular_buffer_t *cb, size_t index);
 
 #endif // CIRCULAR_BUFFER_H
