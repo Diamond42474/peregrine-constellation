@@ -17,7 +17,7 @@ typedef struct
 } message_t;
 
 static void _process(cobs_decoder_t *handle);
-static void _cobs(cobs_decoder_t *handle, unsigned char byte);
+static void _cobs(cobs_decoder_t *handle, decoder_handle_t *ctx, unsigned char byte);
 static int _reset(cobs_decoder_t *handle);
 
 int cobs_decoder_init(cobs_decoder_t *handle)
@@ -31,7 +31,6 @@ int cobs_decoder_init(cobs_decoder_t *handle)
     handle->write_index = 0;
     handle->code = 0;
     handle->remaining = 0;
-    handle->state = COBS_DECODER_STATE_INITIALIZING;
 
     return 0;
 }
@@ -44,30 +43,10 @@ int cobs_decoder_deinit(cobs_decoder_t *handle)
         return -1;
     }
 
-    if (handle->state == COBS_DECODER_STATE_UNINITIALIZED || handle->state == COBS_DECODER_STATE_INITIALIZING)
-    {
-        LOG_WARN("COBS Decoder is already uninitialized");
-        return 0;
-    }
-
-    // Free circular buffers
-    if (circular_buffer_deinit(&handle->input_cb))
-    {
-        LOG_ERROR("Failed to deinitialize COBS Decoder frame buffer");
-        return -1;
-    }
-    if (circular_buffer_deinit(&handle->output_cb))
-    {
-        LOG_ERROR("Failed to deinitialize COBS Decoder output buffer");
-        return -1;
-    }
-
-    handle->state = COBS_DECODER_STATE_UNINITIALIZED;
-
     return 0;
 }
 
-int cobs_decoder_set_input_buffer_size(cobs_decoder_t *handle, size_t size)
+int cobs_decoder_process(cobs_decoder_t *handle, decoder_handle_t *ctx, unsigned char byte)
 {
     if (!handle)
     {
@@ -75,45 +54,7 @@ int cobs_decoder_set_input_buffer_size(cobs_decoder_t *handle, size_t size)
         return -1;
     }
 
-    handle->input_buffer_size = size;
-
-    return 0;
-}
-
-int cobs_decoder_set_output_buffer_size(cobs_decoder_t *handle, size_t size)
-{
-    if (!handle)
-    {
-        LOG_ERROR("COBS Decoder handle is NULL");
-        return -1;
-    }
-
-    handle->output_buffer_size = size;
-
-    return 0;
-}
-
-int cobs_decoder_process(cobs_decoder_t *handle, unsigned char byte)
-{
-    if (!handle)
-    {
-        LOG_ERROR("COBS Decoder handle is NULL");
-        return -1;
-    }
-
-    if (handle->state == COBS_DECODER_STATE_UNINITIALIZED || handle->state == COBS_DECODER_STATE_INITIALIZING)
-    {
-        LOG_ERROR("COBS Decoder is uninitialized");
-        return -1;
-    }
-
-    if (circular_buffer_push(&handle->input_cb, &byte))
-    {
-        LOG_ERROR("Failed to push byte to COBS Decoder frame buffer");
-        return -1;
-    }
-
-    handle->state = COBS_DECODER_STATE_DECODING;
+    _cobs(handle, ctx, byte);
 
     return 0;
 }
@@ -262,7 +203,7 @@ void _process(cobs_decoder_t *handle)
     return;
 }
 
-static void _cobs(cobs_decoder_t *handle, unsigned char byte)
+static void _cobs(cobs_decoder_t *handle, decoder_handle_t *ctx, unsigned char byte)
 {
     LOG_INFO("COBS Decoder Input: %02X", byte);
     if (byte == 0xAA)
@@ -280,10 +221,16 @@ static void _cobs(cobs_decoder_t *handle, unsigned char byte)
             // End of frame delimiter
             if (handle->write_index > 0)
             {
-                message_t msg;
-                memcpy(msg.frame_buffer, handle->frame_buffer, handle->write_index);
-                msg.length = handle->write_index;
-                circular_buffer_push(&handle->output_cb, &msg);
+                for (size_t i = 0; i < handle->write_index; i++)
+                {
+                    LOG_INFO("COBS Decoder Output[%zu]: %02X", i, handle->frame_buffer[i]);
+                    // Push decoded byte to decoder output buffer
+                    if (circular_buffer_push(&ctx->output_buffer, &handle->frame_buffer[i]))
+                    {
+                        LOG_ERROR("Failed to push decoded byte to decoder output buffer");
+                        break;
+                    }
+                }
             }
             else
             {

@@ -8,10 +8,7 @@
 #include "c-logger.h"
 #include "circular_buffer.h"
 
-// #define BUFFER_SIZE_MULTIPLYER 2 // Buffer size multiplier for ADC samples
-// #define BIT_BUFFER_SIZE 1024     // Size of the bit buffer
-
-static int _process_samples(fsk_decoder_handle_t *handle);
+static int _process_samples(fsk_decoder_handle_t *handle, decoder_handle_t *ctx);
 static int _calculate_window_offset(fsk_decoder_handle_t *handle, uint16_t *samples, size_t num_samples);
 
 int fsk_decoder_init(fsk_decoder_handle_t *handle)
@@ -46,20 +43,6 @@ int fsk_decoder_deinit(fsk_decoder_handle_t *handle)
         return 0;
     }
 
-    if (circular_buffer_deinit(&handle->bit_buffer) != 0)
-    {
-        LOG_ERROR("Failed to deinitialize bit buffer");
-        ret = -1;
-        goto failed;
-    }
-
-    if (circular_buffer_deinit(&handle->sample_buffer) != 0)
-    {
-        LOG_ERROR("Failed to deinitialize sample buffer");
-        ret = -1;
-        goto failed;
-    }
-
     handle->state = FSK_DECODER_STATE_UNINITIALIZED;
 
 failed:
@@ -77,31 +60,7 @@ int fsk_decoder_set_bit_buffer_size(fsk_decoder_handle_t *handle, size_t bit_buf
         goto failed;
     }
 
-    handle->configs.bit_buffer_size = bit_buffer_size;
-
-failed:
-    return ret;
-}
-
-int fsk_decoder_set_sample_buffer_multiplier(fsk_decoder_handle_t *handle, size_t multiplier)
-{
-    int ret = 0;
-
-    if (!handle)
-    {
-        LOG_ERROR("FSK decoder handle is NULL");
-        ret = -1;
-        goto failed;
-    }
-
-    if (multiplier == 0)
-    {
-        LOG_ERROR("Sample buffer multiplier must be greater than 0");
-        ret = -1;
-        goto failed;
-    }
-
-    handle->configs.sample_buffer_multiplier = multiplier;
+    // handle->configs.bit_buffer_size = bit_buffer_size;
 
 failed:
     return ret;
@@ -195,32 +154,7 @@ failed:
     return ret;
 }
 
-int fsk_decoder_process(fsk_decoder_handle_t *handle, const uint16_t *samples, size_t num_samples)
-{
-    int ret = 0;
-
-    if (!handle || !samples || num_samples == 0)
-    {
-        LOG_ERROR("Invalid parameters to process samples");
-        return -1;
-    }
-
-    LOG_DEBUG("Processing %zu samples", num_samples);
-    for (size_t i = 0; i < num_samples; i++)
-    {
-        if (circular_buffer_push(&handle->sample_buffer, &samples[i]) != 0)
-        {
-            LOG_ERROR("Failed to push sample to buffer");
-            return -1;
-        }
-    }
-
-    handle->state = FSK_DECODER_STATE_DECODING;
-
-    return ret;
-}
-
-int fsk_decoder_task(fsk_decoder_handle_t *handle)
+int fsk_decoder_task(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
 {
     int ret = 0;
 
@@ -237,43 +171,26 @@ int fsk_decoder_task(fsk_decoder_handle_t *handle)
         ret = -1;
         break;
     case FSK_DECODER_STATE_INITIALIZING:
-        // Initialize circular buffers
-        if (circular_buffer_dynamic_init(&handle->bit_buffer, sizeof(bool), handle->configs.bit_buffer_size) != 0)
-        {
-            LOG_ERROR("Failed to initialize bit buffer");
-            ret = -1;
-            goto failed;
-        }
-        if (circular_buffer_dynamic_init(&handle->sample_buffer, sizeof(uint16_t), handle->configs.sample_size * handle->configs.sample_buffer_multiplier) != 0)
-        {
-            LOG_ERROR("Failed to initialize sample buffer");
-            ret = -1;
-            goto failed;
-        }
         handle->state = FSK_DECODER_STATE_IDLE;
         LOG_INFO("FSK decoder initialized");
         break;
     case FSK_DECODER_STATE_IDLE:
-        if (!circular_buffer_is_empty(&handle->sample_buffer))
+        if (!circular_buffer_is_empty(&ctx->input_buffer))
         {
             handle->state = FSK_DECODER_STATE_DECODING;
         }
 
         break;
     case FSK_DECODER_STATE_DECODING:
-        LOG_DEBUG("Decoding samples, current sample buffer size: %zu", circular_buffer_count(&handle->sample_buffer));
-        if (circular_buffer_count(&handle->sample_buffer) >= handle->configs.sample_size)
+        LOG_DEBUG("Decoding samples, current sample buffer size: %zu", circular_buffer_count(&ctx->input_buffer));
+        if (circular_buffer_count(&ctx->input_buffer) >= handle->configs.sample_size)
         {
-            if (_process_samples(handle))
+            if (_process_samples(handle, ctx))
             {
                 LOG_ERROR("Failed to process samples");
                 ret = -1;
                 goto failed;
             }
-        }
-        else
-        {
-            handle->state = FSK_DECODER_STATE_IDLE;
         }
         break;
     default:
@@ -282,36 +199,6 @@ int fsk_decoder_task(fsk_decoder_handle_t *handle)
         break;
     }
 failed:
-    return ret;
-}
-
-bool fsk_decoder_has_bit(fsk_decoder_handle_t *handle)
-{
-    if (!handle)
-    {
-        LOG_ERROR("FSK decoder handle is NULL");
-        return false;
-    }
-
-    return !circular_buffer_is_empty(&handle->bit_buffer);
-}
-
-int fsk_decoder_get_bit(fsk_decoder_handle_t *handle, bool *bit)
-{
-    int ret = 0;
-
-    if (!handle || !bit)
-    {
-        LOG_ERROR("Invalid parameters to get bit");
-        return -1;
-    }
-
-    if (circular_buffer_pop(&handle->bit_buffer, bit) != 0)
-    {
-        LOG_ERROR("Failed to pop bit from buffer");
-        return -1;
-    }
-
     return ret;
 }
 
@@ -330,20 +217,20 @@ bool fsk_decoder_busy(fsk_decoder_handle_t *handle)
 // PRIVATE FUNCTIONS
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-static int _process_samples(fsk_decoder_handle_t *handle)
+static int _process_samples(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
 {
     int ret = 0;
 
     float power_0 = 0.0f;
     float power_1 = 0.0f;
 
-    if (goertzel_compute_power_circular_buff(&handle->sample_buffer, handle->configs.sample_size, handle->configs.freq_0, handle->configs.sample_rate, &power_0) < 0)
+    if (goertzel_compute_power_circular_buff(&ctx->input_buffer, handle->configs.sample_size, handle->configs.freq_0, handle->configs.sample_rate, &power_0) < 0)
     {
         LOG_ERROR("Failed to compute power for frequency %f", handle->configs.freq_0);
         ret = -1;
         goto failed;
     }
-    if (goertzel_compute_power_circular_buff(&handle->sample_buffer, handle->configs.sample_size, handle->configs.freq_1, handle->configs.sample_rate, &power_1) < 0)
+    if (goertzel_compute_power_circular_buff(&ctx->input_buffer, handle->configs.sample_size, handle->configs.freq_1, handle->configs.sample_rate, &power_1) < 0)
     {
         LOG_ERROR("Failed to compute power for frequency %f", handle->configs.freq_1);
         ret = -1;
@@ -369,11 +256,11 @@ static int _process_samples(fsk_decoder_handle_t *handle)
         bit = true; // Detected frequency 1
     }
 
-    LOG_INFO("Bit: %d", bit);
+    LOG_DEBUG("Bit: %d", bit);
 
-    if (circular_buffer_push(&handle->bit_buffer, &bit))
+    if (decoder_process_bit(ctx, bit))
     {
-        LOG_ERROR("Failed to push bit to buffer");
+        LOG_ERROR("Failed to process decoded bit");
         ret = -1;
         goto failed;
     }
@@ -383,7 +270,7 @@ cleanup:
     uint16_t temp;
     for (int i = 0; i < handle->configs.sample_size; i++)
     {
-        if (circular_buffer_pop(&handle->sample_buffer, &temp) != 0)
+        if (circular_buffer_pop(&ctx->input_buffer, &temp) != 0)
         {
             LOG_ERROR("Failed to pop sample from buffer");
             ret = -1;

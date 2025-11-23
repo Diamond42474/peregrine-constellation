@@ -6,7 +6,8 @@ add_library(peregrine-constellation-impl STATIC
     ${CMAKE_CURRENT_LIST_DIR}/src/decoding/decoder.c
     ${CMAKE_CURRENT_LIST_DIR}/src/decoding/fsk_decoder.c
     ${CMAKE_CURRENT_LIST_DIR}/src/decoding/byte_assembler.c
-    ${CMAKE_CURRENT_LIST_DIR}/src/decoding/cobs_decoder.c
+    #${CMAKE_CURRENT_LIST_DIR}/src/decoding/cobs_decoder.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/decoding/packet_decoder.c
     
     ${CMAKE_CURRENT_LIST_DIR}/src/encoding/encoder.c
     ${CMAKE_CURRENT_LIST_DIR}/src/encoding/cobs_encoder.c

@@ -5,12 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "circular_buffer.h"
-
-typedef enum
-{
-    FRAME_DECODER_NONE,
-    FRAME_DECODER_COBS,
-} frame_decoder_e;
+#include "packet_decoder.h"
 
 typedef enum
 {
@@ -28,11 +23,15 @@ typedef struct
 {
     bit_decoder_e bit_decoder;
     byte_decoder_e byte_decoder;
-    frame_decoder_e frame_decoder;
 
     void *bit_decoder_handle;
     void *byte_decoder_handle;
-    void *frame_decoder_handle;
+    packet_decoder_t packet_decoder;
+
+    circular_buffer_t input_buffer;
+    size_t input_buffer_size;
+    circular_buffer_t output_buffer;
+    size_t output_buffer_size;
 
     enum
     {
@@ -40,21 +39,25 @@ typedef struct
         DECODER_STATE_INITIALIZING,
         DECODER_STATE_IDLE,
         DECODER_STATE_PROCESSING,
-        DECODER_STATE_TRANSFERRING,
     } state;
 } decoder_handle_t;
 
 int decoder_init(decoder_handle_t *handle);
 int decoder_deinit(decoder_handle_t *handle);
 
-int decoder_set_frame_decoder(decoder_handle_t *handle, frame_decoder_e type, void *frame_decoder_handle);
 int decoder_set_byte_decoder(decoder_handle_t *handle, byte_decoder_e type, void *byte_decoder_handle);
 int decoder_set_bit_decoder(decoder_handle_t *handle, bit_decoder_e type, void *bit_decoder_handle);
+int decoder_set_input_buffer_size(decoder_handle_t *handle, size_t size);
+int decoder_set_output_buffer_size(decoder_handle_t *handle, size_t size);
 int decoder_task(decoder_handle_t *handle);
 
 int decoder_process_samples(decoder_handle_t *handle, const uint16_t *samples, size_t num_samples);
-bool decoder_has_frame(decoder_handle_t *handle);
-int decoder_get_frame(decoder_handle_t *handle, unsigned char *buffer, size_t buffer_len, size_t *frame_len);
+int decoder_process_bit(decoder_handle_t *handle, bool bit);
+int decoder_process_byte(decoder_handle_t *handle, unsigned char byte);
+int decoder_process_packet(decoder_handle_t *handle, packet_t *packet);
+
+bool decoder_has_packet(decoder_handle_t *handle);
+int decoder_get_packet(decoder_handle_t *handle, packet_t *packet);
 bool decoder_busy(decoder_handle_t *handle);
 
 #endif // DECODER_H

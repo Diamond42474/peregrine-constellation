@@ -79,9 +79,9 @@ pc_error_t pc_send_message(pc_handle_t *handle, uint16_t dest_addr, const uint8_
         return PC_ERROR_SEND_FUNCTION_NOT_SET;
     }
 
-    mesh_packet_t packet;
+    packet_t packet;
     initialize_packet(&packet, 0, handle->node_address, dest_addr, 0, 10, payload, payload_length);
-    handle->send_func((uint8_t *)&packet, sizeof(mesh_packet_t));
+    handle->send_func((uint8_t *)&packet, sizeof(packet_t));
     return PC_SUCCESS;
 
 }
@@ -97,18 +97,18 @@ void pc_process_incoming_data(pc_handle_t *handle, const uint8_t *data, size_t l
     {
         return;
     }
-    mesh_packet_t *packet = (mesh_packet_t *)data;
-    if (packet->dest_addr != handle->node_address)
+    packet_t *packet = (packet_t *)data;
+    if (packet->content.dest_addr != handle->node_address)
     {
         return;
     }
-    if (packet->checksum != calculate_checksum(packet))
+    if (packet->content.payload_crc != calculate_payload_crc(packet))
     {
         return;
     }
     if (handle->callback != NULL)
     {
-        handle->callback(packet->payload, packet->payload_length);
+        handle->callback(packet->content.payload, packet->content.payload_length);
     }
 }
 

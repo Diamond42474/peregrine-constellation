@@ -5,22 +5,18 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "circular_buffer.h"
+#include "decoder.h"
 
 typedef struct fsk_decoder_handle
 {
     struct
     {
-        int sample_size;                 // Size of the ADC sample buffer
-        int sample_rate;                 // Sample rate of the ADC
-        float power_threshold;           // Power threshold for detecting bits
-        float freq_0;                    // Frequency representing bit 0
-        float freq_1;                    // Frequency representing bit 1
-        size_t bit_buffer_size;          // Size of the bit buffer
-        size_t sample_buffer_multiplier; // Multiplier for sample buffer size relative to adc sample size
+        int sample_size;       // Size of the ADC sample buffer
+        int sample_rate;       // Sample rate of the ADC
+        float power_threshold; // Power threshold for detecting bits
+        float freq_0;          // Frequency representing bit 0
+        float freq_1;          // Frequency representing bit 1
     } configs;
-
-    circular_buffer_t bit_buffer;    // Buffer to hold decoded bits
-    circular_buffer_t sample_buffer; // Buffer to hold incoming samples
 
     enum
     {
@@ -41,11 +37,6 @@ int fsk_decoder_set_rates(fsk_decoder_handle_t *handle, int _baud_rate, int _sam
 int fsk_decoder_set_frequencies(fsk_decoder_handle_t *handle, float freq_0, float freq_1);
 int fsk_decoder_set_power_threshold(fsk_decoder_handle_t *handle, float _threshold);
 
-int fsk_decoder_process(fsk_decoder_handle_t *handle, const uint16_t *samples, size_t num_samples);
-int fsk_decoder_task(fsk_decoder_handle_t *handle);
-
-bool fsk_decoder_has_bit(fsk_decoder_handle_t *handle);
-int fsk_decoder_get_bit(fsk_decoder_handle_t *handle, bool *bit);
-bool fsk_decoder_busy(fsk_decoder_handle_t *handle);
+int fsk_decoder_task(fsk_decoder_handle_t *handle, decoder_handle_t *ctx);
 
 #endif // FSK_DECODER_H
