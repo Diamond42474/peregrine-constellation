@@ -4,8 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "circular_buffer.h"
-#include "decoder.h"
+#include "utils/circular_buffer.h"
+#include "decoding/decoder.h"
 
 typedef struct fsk_decoder_handle
 {

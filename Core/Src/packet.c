@@ -1,4 +1,4 @@
-#include "../include/packet.h"
+#include "../Inc/packet.h"
 #include <string.h>
 
 uint16_t calculate_payload_crc(const packet_t *packet)

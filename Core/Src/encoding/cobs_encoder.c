@@ -1,4 +1,4 @@
-#include "cobs_encoder.h"
+#include "encoding/cobs_encoder.h"
 
 #include "c-logger.h"
 

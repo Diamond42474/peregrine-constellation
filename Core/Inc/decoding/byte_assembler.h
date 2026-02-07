@@ -3,8 +3,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "circular_buffer.h"
-#include "decoder.h"
+#include "utils/circular_buffer.h"
+#include "decoding/decoder.h"
 
 typedef enum
 {

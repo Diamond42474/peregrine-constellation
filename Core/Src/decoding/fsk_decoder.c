@@ -1,12 +1,12 @@
-#include "fsk_decoder.h"
+#include "decoding/fsk_decoder.h"
 
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include "goertzel.h"
+#include "utils/goertzel.h"
 #include "c-logger.h"
-#include "circular_buffer.h"
+#include "utils/circular_buffer.h"
 
 static int _process_samples(fsk_decoder_handle_t *handle, decoder_handle_t *ctx);
 static int _calculate_window_offset(fsk_decoder_handle_t *handle, uint16_t *samples, size_t num_samples);

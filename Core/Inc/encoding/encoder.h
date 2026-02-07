@@ -2,8 +2,8 @@
 #define ENCODER_H
 
 #include <stddef.h>
-#include "circular_buffer.h"
-#include "bit_unpacker.h"
+#include "utils/circular_buffer.h"
+#include "utils/bit_unpacker.h"
 
 typedef enum
 {

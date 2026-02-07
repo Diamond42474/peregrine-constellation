@@ -2,7 +2,7 @@
 #include <stddef.h>
 
 #include "peregrine-constellation.h"
-#include "../include/packet.h"
+#include "../Inc/packet.h"
 
 // Initialize the library with the node address
 pc_error_t pc_init(pc_handle_t *handle)

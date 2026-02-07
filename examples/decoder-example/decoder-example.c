@@ -1,13 +1,13 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <math.h>
-#include "decoder.h"
+#include "decoding/decoder.h"
 #include "c-logger.h"
 
-#include "fsk_decoder.h"
-#include "byte_assembler.h"
+#include "decoding/fsk_decoder.h"
+#include "decoding/byte_assembler.h"
 
-#include "fsk_utils.h"
+#include "utils/fsk_utils.h"
 
 #define FQ0 1100.0f
 #define FQ1 2200.0f

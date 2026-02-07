@@ -1,4 +1,4 @@
-#include "goertzel.h"
+#include "utils/goertzel.h"
 #include <math.h>   // For cosf, M_PI
 #include <stddef.h> // For NULL
 #include "c-logger.h"

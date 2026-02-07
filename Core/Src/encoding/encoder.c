@@ -1,8 +1,8 @@
-#include "encoder.h"
+#include "encoding/encoder.h"
 
 #include "c-logger.h"
-#include "bit_unpacker.h"
-#include "cobs_encoder.h"
+#include "utils/bit_unpacker.h"
+#include "encoding/cobs_encoder.h"
 
 #define COBS_MAX_PAYLOAD_SIZE (254) // Maximum payload size for COBS (code_byte + data + delimiter_byte)
 #define PREAMBLE_BYTE (0xAA)

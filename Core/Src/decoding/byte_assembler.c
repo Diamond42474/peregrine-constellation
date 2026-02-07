@@ -1,10 +1,9 @@
-#include "byte_assembler.h"
+#include "decoding/byte_assembler.h"
 
 #include <stdlib.h>
 #include <stdint.h>
 
 #include "c-logger.h"
-#include "cobs_decoder.h"
 
 // Prvate function declarations
 static int _process_bit(byte_assembler_handle_t *handle, decoder_handle_t *ctx, bool bit);

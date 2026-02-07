@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include "circular_buffer.h"
+#include "utils/circular_buffer.h"
 #include "packet_decoder.h"
 
 typedef enum

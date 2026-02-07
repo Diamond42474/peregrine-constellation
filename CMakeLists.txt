@@ -11,7 +11,7 @@ set(CMAKE_C_STANDARD_REQUIRED True)
 add_subdirectory(lib)
 
 # Add main project
-add_subdirectory(peregrine-constellation)
+add_subdirectory(Core)
 
 # Add examples
 add_subdirectory(examples)

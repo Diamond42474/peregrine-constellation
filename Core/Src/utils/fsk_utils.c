@@ -1,4 +1,4 @@
-#include "fsk_utils.h"
+#include "utils/fsk_utils.h"
 #include <math.h>
 
 fsk_timing_t fsk_calculate_timing(float f0, float f1, int baud_rate)

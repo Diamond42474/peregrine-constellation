@@ -1,6 +1,6 @@
-#include "packet_decoder.h"
+#include "decoding/packet_decoder.h"
 
-#include "decoder.h"
+#include "decoding/decoder.h"
 #include "c-logger.h"
 #include <string.h>
 

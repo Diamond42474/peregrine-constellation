@@ -6,11 +6,11 @@
  * The decoder handles the pipeline from taking in sine wave samples
  * to generating frames.
  */
-#include "decoder.h"
+#include "decoding/decoder.h"
 
 #include "c-logger.h"
-#include "fsk_decoder.h"
-#include "byte_assembler.h"
+#include "decoding/fsk_decoder.h"
+#include "decoding/byte_assembler.h"
 
 static void _handle_sub_tasks(decoder_handle_t *handle);
 
