@@ -8,4 +8,4 @@ BUILD_DIR=${WORK_DIR}/build
 
 # Run tests
 cd ${BUILD_DIR}
-ctest --output-on-failure -V
+ctest --output-on-failure

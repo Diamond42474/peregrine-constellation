@@ -196,6 +196,12 @@ static int _process_bit(byte_assembler_handle_t *handle, decoder_handle_t *ctx, 
         return 0;
     }
 
+    if (!handle->preamble_found)
+    {
+        // Still looking for preamble, don't assemble bytes yet
+        return 0;
+    }
+
     // Now assemble bytes as normal
     if (handle->bit_order == BIT_ORDER_LSB_FIRST)
     {
