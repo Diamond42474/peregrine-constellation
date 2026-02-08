@@ -1,4 +1,4 @@
-name: CMake Build & Test
+name: Unit Tests
 
 on:
   push:
@@ -10,7 +10,7 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,29 +25,6 @@ jobs:
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-artifacts
-        path: ${{github.workspace}}/build
-
-  test:
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-    - name: Checkout repository (with submodules)
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-        fetch-depth: 0
-
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: build-artifacts
-        path: ${{github.workspace}}/build
 
     - name: Restore executable permissions
       run: chmod -R +x ${{github.workspace}}/build
