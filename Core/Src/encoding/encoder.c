@@ -5,7 +5,7 @@
 #include "encoding/cobs_encoder.h"
 
 #define COBS_MAX_PAYLOAD_SIZE (254) // Maximum payload size for COBS (code_byte + data + delimiter_byte)
-#define PREAMBLE_BYTE (0xAA)
+#define PREAMBLE_WORD (0xABBA)
 
 static int _process(encoder_handle_t *handle);
 static int _cobs(encoder_handle_t *handle);
@@ -22,7 +22,7 @@ int encoder_init(encoder_handle_t *handle)
 
     bit_unpacker_init(&handle->bit_unpacker);
 
-    handle->preamble_byte = PREAMBLE_BYTE; // Default for now
+    handle->preamble_word = PREAMBLE_WORD; // Default for now
     handle->preamble_length = 1;
 
     handle->state = ENCODER_UNINITIALIZED;
@@ -204,7 +204,7 @@ int encoder_task(encoder_handle_t *handle)
     {
     case ENCODER_UNINITIALIZED:
 
-        if (circular_buffer_dynamic_init(&handle->input_cb, sizeof(unsigned char), handle->input_cb_size))
+        if (circular_buffer_dynamic_init(&handle->input_cb, sizeof(handle->preamble_word), handle->input_cb_size))
         {
             LOG_ERROR("Failed to init input buffer");
             return -1;
@@ -269,7 +269,7 @@ static int _process(encoder_handle_t *handle)
 {
     int ret = 0;
 
-    circular_buffer_push(&handle->output_cb, &handle->preamble_byte); // Place preamble byte
+    circular_buffer_push(&handle->output_cb, &handle->preamble_word); // Place preamble byte
 
     switch (handle->type)
     {

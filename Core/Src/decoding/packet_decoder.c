@@ -49,8 +49,8 @@ int packet_decoder_process_byte(packet_decoder_t *handle, unsigned char byte)
         if (handle->packet_buffer_index >= 2)
         {
             // Check for preamble pattern (0xAA, 0xAA)
-            if (handle->packet_buffer[handle->packet_buffer_index - 2] == 0xAA &&
-                handle->packet_buffer[handle->packet_buffer_index - 1] == 0xAA)
+            if (handle->packet_buffer[handle->packet_buffer_index - 2] == 0xAB &&
+                handle->packet_buffer[handle->packet_buffer_index - 1] == 0xBA)
             {
                 LOG_INFO("Preamble detected");
                 handle->state = PACKET_DECODER_STATE_WAITING_FOR_HEADER;

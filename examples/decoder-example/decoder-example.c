@@ -33,12 +33,10 @@ void send_byte(decoder_handle_t *decoder, unsigned char byte, size_t sample_size
     {
         if ((byte >> bit) & 1)
         {
-            // Send 1
             generate_sine_wave(buffer, FQ1, sample_rate, sample_size);
         }
         else
         {
-            // Send 0
             generate_sine_wave(buffer, FQ0, sample_rate, sample_size);
         }
         decoder_process_samples(decoder, buffer, sample_size);
@@ -72,20 +70,25 @@ int main(void)
     // Initialize Byte Assembler
     byte_assembler_init(&byte_assembler);
     byte_assembler_set_bit_order(&byte_assembler, BIT_ORDER_LSB_FIRST);
-    byte_assembler_set_preamble(&byte_assembler, 0xAA);                  // Preamble byte         // Buffer for 256 bytes
+    if (byte_assembler_set_preamble(&byte_assembler, 0xABBA))
+    {
+        LOG_ERROR("Failed to set preamble for byte assembler");
+        ret = -1;
+        goto failed;
+    } // Buffer for 256 bytes
 
     // Initialize Decoder
     decoder_init(&decoder);
     decoder_set_bit_decoder(&decoder, BIT_DECODER_FSK, &fsk_decoder);
     decoder_set_byte_decoder(&decoder, BYTE_DECODER_BIT_STUFFING, &byte_assembler);
-    decoder_set_input_buffer_size(&decoder, fsk_timing.samples_per_bit * 128);  // Input buffer for samples
-    decoder_set_output_buffer_size(&decoder, 10);   // Output buffer for packets
+    decoder_set_input_buffer_size(&decoder, fsk_timing.samples_per_bit * 128); // Input buffer for samples
+    decoder_set_output_buffer_size(&decoder, 10);                              // Output buffer for packets
 
     // Main processing loop
     LOG_INFO("Starting main processing loop");
     while (decoder_busy(&decoder))
     {
-        if(decoder_task(&decoder))
+        if (decoder_task(&decoder))
         {
             LOG_ERROR("Decoder task failed");
             ret = -1;
@@ -94,7 +97,7 @@ int main(void)
     }
 
     // Send half a byte of 0s to test bit alignment mechanism
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 12; i++)
     {
         uint16_t sample_buffer[fsk_timing.samples_per_bit];
         generate_sine_wave(sample_buffer, FQ0, fsk_timing.sample_rate, sizeof(sample_buffer) / sizeof(sample_buffer[0]));
@@ -107,30 +110,32 @@ int main(void)
         }
     }
 
-    // Send 0xAA in the form of alternating sine waves of 1100 and 2200Hz
-    send_byte(&decoder, 0xAA, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
-    send_byte(&decoder, 0xAA, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
-    send_byte(&decoder, 0x03, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
-    send_byte(&decoder, 0xB1, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
-    send_byte(&decoder, 0x2F, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
-    send_byte(&decoder, 0x00, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
-    send_byte(&decoder, 0x03, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
-    send_byte(&decoder, 0xB1, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
-    send_byte(&decoder, 0x2F, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
-    send_byte(&decoder, 0x00, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
-    send_byte(&decoder, 0x03, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
-    send_byte(&decoder, 0xB1, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
-    send_byte(&decoder, 0x2F, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
-    send_byte(&decoder, 0x00, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
-    send_byte(&decoder, 0x03, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
-    send_byte(&decoder, 0xB1, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
-    send_byte(&decoder, 0x2F, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
-    send_byte(&decoder, 0x00, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    // Send 0xABBA in the form of alternating sine waves of 1100 and 2200Hz
+    send_byte(&decoder, 0xAB, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    send_byte(&decoder, 0xBA, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    // send_byte(&decoder, 0x03, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    // send_byte(&decoder, 0xB1, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    // send_byte(&decoder, 0x2F, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    // send_byte(&decoder, 0x00, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    // send_byte(&decoder, 0x03, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    // send_byte(&decoder, 0xB1, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    // send_byte(&decoder, 0x2F, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    // send_byte(&decoder, 0x00, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    // send_byte(&decoder, 0x03, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    // send_byte(&decoder, 0xB1, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    // send_byte(&decoder, 0x2F, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    // send_byte(&decoder, 0x00, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    // send_byte(&decoder, 0x03, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    // send_byte(&decoder, 0xB1, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    // send_byte(&decoder, 0x2F, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
+    // send_byte(&decoder, 0x00, fsk_timing.samples_per_bit, fsk_timing.sample_rate);
 
     if (decoder_has_packet(&decoder))
     {
         LOG_INFO("Packet available");
-    }else {
+    }
+    else
+    {
         LOG_INFO("No frame");
     }
 

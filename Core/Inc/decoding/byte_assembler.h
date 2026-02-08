@@ -15,7 +15,7 @@ typedef enum
 typedef struct
 {
     bit_order_t bit_order;
-    uint16_t preamble_byte;
+    uint16_t preamble;
 
     uint16_t preamble_buffer;
     int preamble_bits;

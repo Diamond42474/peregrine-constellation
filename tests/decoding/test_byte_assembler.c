@@ -42,6 +42,7 @@ void test_preamble_detection(void)
 {
     TEST_ASSERT_TRUE(byte_assembler_init(&byte_assembler_handle) == 0);
 
+    byte_assembler_set_bit_order(&byte_assembler_handle, BIT_ORDER_MSB_FIRST);
     byte_assembler_set_preamble(&byte_assembler_handle, 0xABBA);
 
     _send_byte_as_bits(&byte_assembler_handle, &decoder_handle, 0xAB);

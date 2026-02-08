@@ -2,6 +2,7 @@
 #define ENCODER_H
 
 #include <stddef.h>
+#include <stdint.h>
 #include "utils/circular_buffer.h"
 #include "utils/bit_unpacker.h"
 
@@ -20,9 +21,9 @@ typedef struct
     size_t output_cb_size;
     bit_unpacker_t bit_unpacker;
 
-    unsigned char preamble_byte; // Normally 0xAA
-    size_t preamble_length;      // Number of preamble bytes before each frame
-    size_t max_frame_size;       // Default of 256 with COBS
+    uint16_t preamble_word; // Normally 0xABBA
+    size_t preamble_length; // Number of preamble bytes before each frame
+    size_t max_frame_size;  // Default of 256 with COBS
 
     enum
     {

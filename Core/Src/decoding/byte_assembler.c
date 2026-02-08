@@ -6,6 +6,7 @@
 #include "c-logger.h"
 
 // Prvate function declarations
+static uint16_t swap16(uint16_t v);
 static int _process_bit(byte_assembler_handle_t *handle, decoder_handle_t *ctx, bool bit);
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -23,9 +24,8 @@ int byte_assembler_init(byte_assembler_handle_t *handle)
     handle->current_byte = 0;
     handle->bits_collected = 0;
     handle->bit_order = BIT_ORDER_MSB_FIRST;
-    handle->preamble_byte = 0xAAAA; // Default preamble
+    handle->preamble = 0xABBA; // Default preamble
     handle->preamble_buffer = 0;
-    handle->preamble_bits = 0;
     handle->preamble_found = false;
     handle->state = BYTE_ASSEMBLER_WAITING_FOR_PREAMBLE;
 
@@ -64,7 +64,7 @@ int byte_assembler_set_preamble(byte_assembler_handle_t *handle, uint16_t preamb
         return -1;
     }
 
-    handle->preamble_byte = preamble;
+    handle->preamble = preamble;
 
     return 0;
 }
@@ -110,7 +110,6 @@ int byte_assembler_reset(byte_assembler_handle_t *handle)
     handle->current_byte = 0;
     handle->bits_collected = 0;
     handle->preamble_buffer = 0;
-    handle->preamble_bits = 0;
     handle->preamble_found = false;
 
     return 0;
@@ -133,7 +132,7 @@ static int _process_bit(byte_assembler_handle_t *handle, decoder_handle_t *ctx, 
     switch (handle->state)
     {
     case BYTE_ASSEMBLER_WAITING_FOR_PREAMBLE:
-        
+
         break;
     case BYTE_ASSEMBLER_ASSEMBLING:
         break;
@@ -147,18 +146,29 @@ static int _process_bit(byte_assembler_handle_t *handle, decoder_handle_t *ctx, 
     // Shift bit into preamble buffer
     if (handle->bit_order == BIT_ORDER_LSB_FIRST)
     {
-        // Shift right, new bit goes into MSB
-        handle->preamble_buffer = (handle->preamble_buffer >> 1) | ((bit & 0x01) << 7);
+        // Incoming bit is MSB
+        handle->preamble_buffer =
+            (handle->preamble_buffer >> 1) |
+            ((uint16_t)(bit & 1) << 15);
     }
-    else // MSB first
+    else
     {
-        // Shift left, new bit goes into LSB
-        handle->preamble_buffer = (handle->preamble_buffer << 1) | (bit & 0x01);
+        // Incoming bit is LSB
+        handle->preamble_buffer =
+            (handle->preamble_buffer << 1) |
+            (bit & 1);
     }
 
-    handle->preamble_bits = (handle->preamble_bits < 8) ? handle->preamble_bits + 1 : 8;
+    uint16_t preamble = handle->preamble_buffer;
 
-    if (handle->preamble_buffer == handle->preamble_byte)
+    if (handle->bit_order == BIT_ORDER_LSB_FIRST)
+    {
+        preamble = swap16(preamble);
+    }
+
+    LOG_INFO("Preamble buffer: 0x%04X", preamble);
+
+    if (preamble == handle->preamble)
     {
         handle->preamble_found = true;
         LOG_INFO("Preamble detected, aligning bytes");
@@ -166,9 +176,19 @@ static int _process_bit(byte_assembler_handle_t *handle, decoder_handle_t *ctx, 
         handle->current_byte = 0;
         handle->bits_collected = 0;
 
-        if (decoder_process_byte(ctx, handle->preamble_byte))
+        uint8_t hi = (handle->preamble >> 8) & 0xFF;
+        uint8_t lo = handle->preamble & 0xFF;
+
+        if (decoder_process_byte(ctx, hi))
         {
-            LOG_ERROR("Failed to process preamble byte");
+            LOG_ERROR("Failed to process preamble high byte");
+            ret = -1;
+            goto failed;
+        }
+
+        if (decoder_process_byte(ctx, lo))
+        {
+            LOG_ERROR("Failed to process preamble low byte");
             ret = -1;
             goto failed;
         }
@@ -203,4 +223,9 @@ static int _process_bit(byte_assembler_handle_t *handle, decoder_handle_t *ctx, 
 
 failed:
     return ret;
+}
+
+static uint16_t swap16(uint16_t v)
+{
+    return (v >> 8) | (v << 8);
 }
