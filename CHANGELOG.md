@@ -1,10 +1,11 @@
-##  (2025-11-16)
+##  (2026-02-08)
 
 
 ### Features
 
 * Added AI generated workflow ([9d29f0a](https://github.com/Diamond42474/peregrine-constellation/commit/9d29f0aa2b12fc458709e75bc07a2ec3bbeb7349))
 * Added set head function for circular buffer for use with DMA operations ([f52a219](https://github.com/Diamond42474/peregrine-constellation/commit/f52a2193ded662bc95c007145fd72e8dfd61be71))
+* Added Unity testing framework ([fd0f4ef](https://github.com/Diamond42474/peregrine-constellation/commit/fd0f4ef00d3bedb649eea5b460e3694e8d9a5322))
 * built out cobs decoder pipeline and integrated it into decoder pipeline manager ([595ef48](https://github.com/Diamond42474/peregrine-constellation/commit/595ef485ccc787c018f1ed9d273846b84c5a52fd))
 * Encoder Pipeline ([cc19e52](https://github.com/Diamond42474/peregrine-constellation/commit/cc19e52ebcaed1f9cfe12796f1faf3b211602dd0))
 * Pipeline for managing frame encoding ([883af6d](https://github.com/Diamond42474/peregrine-constellation/commit/883af6df9f1de4dfc9251751c8d8056eb13c5a0e))
@@ -12,6 +13,7 @@
 
 ### Bug Fixes
 
+* Bad MSB/LSB handling when dealing with uint16_t preamble ([288d2c3](https://github.com/Diamond42474/peregrine-constellation/commit/288d2c3399dc398ecfaa2a31be648361b68da01a))
 * byte assembler preamle takes into account bit order ([3dc15f7](https://github.com/Diamond42474/peregrine-constellation/commit/3dc15f754beff1f19e13b48fb39fdeb9ddfa7e91))
 * byte assembler sends preamble so framer knows when new message starts ([24e343f](https://github.com/Diamond42474/peregrine-constellation/commit/24e343f17da9539ca787342d2de6ed1e9938f239))
 * now decoder doesn't consider available frame to be a pending transfer since the decoder doesn't handle the data after that. (it's grabbed from a high level) ([d3ffbdc](https://github.com/Diamond42474/peregrine-constellation/commit/d3ffbdcdb57fd23d570276a8f96d71deafa7bf68))
@@ -20,5 +22,6 @@
 ### Performance Improvements
 
 * Added state-based flags for grabbing when the decoder is busy or not ([30c9bcc](https://github.com/Diamond42474/peregrine-constellation/commit/30c9bcc2da0f6f1f22c2384aa32c8321b47a0cb8))
+* Decoder now uses single input and output buffer that's shared between sub-modules ([df63923](https://github.com/Diamond42474/peregrine-constellation/commit/df639237c8097ec9aceca616e93f625bf0fa6950))
 * simplified fsk timing calculator ([9759f0c](https://github.com/Diamond42474/peregrine-constellation/commit/9759f0ca30091dcae83014938cc93e22219ec267))
 
