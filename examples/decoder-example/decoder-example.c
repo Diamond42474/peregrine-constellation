@@ -29,14 +29,16 @@ void generate_sine_wave(uint16_t *buffer, float frequency, float sample_rate, ui
 void send_byte(decoder_handle_t *decoder, unsigned char byte, size_t sample_size, float sample_rate)
 {
     uint16_t buffer[sample_size];
-    for (int bit = 0; bit < 8; bit++)
+    for (int bit = 7; bit >= 0; bit--)
     {
         if ((byte >> bit) & 1)
         {
+            LOG_INFO("Sending bit 1");
             generate_sine_wave(buffer, FQ1, sample_rate, sample_size);
         }
         else
         {
+            LOG_INFO("Sending bit 0");
             generate_sine_wave(buffer, FQ0, sample_rate, sample_size);
         }
         decoder_process_samples(decoder, buffer, sample_size);
@@ -69,7 +71,6 @@ int main(void)
     fsk_decoder_set_power_threshold(&fsk_decoder, 1000.0f);
     // Initialize Byte Assembler
     byte_assembler_init(&byte_assembler);
-    byte_assembler_set_bit_order(&byte_assembler, BIT_ORDER_LSB_FIRST);
     if (byte_assembler_set_preamble(&byte_assembler, 0xABBA))
     {
         LOG_ERROR("Failed to set preamble for byte assembler");

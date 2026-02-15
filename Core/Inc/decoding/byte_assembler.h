@@ -6,15 +6,8 @@
 #include "utils/circular_buffer.h"
 #include "decoding/decoder.h"
 
-typedef enum
-{
-    BIT_ORDER_LSB_FIRST,
-    BIT_ORDER_MSB_FIRST
-} bit_order_t;
-
 typedef struct
 {
-    bit_order_t bit_order;
     uint16_t preamble;
 
     uint16_t preamble_buffer;
@@ -34,7 +27,6 @@ typedef struct
 int byte_assembler_init(byte_assembler_handle_t *handle);
 int byte_assembler_deinit(byte_assembler_handle_t *handle);
 
-int byte_assembler_set_bit_order(byte_assembler_handle_t *handle, bit_order_t order);
 int byte_assembler_set_byte_buffer_size(byte_assembler_handle_t *handle, size_t size);
 int byte_assembler_set_bit_buffer_size(byte_assembler_handle_t *handle, size_t size);
 int byte_assembler_set_preamble(byte_assembler_handle_t *handle, uint16_t preamble);
