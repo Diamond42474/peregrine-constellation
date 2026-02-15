@@ -135,7 +135,7 @@ static int _process_bit(byte_assembler_handle_t *handle, decoder_handle_t *ctx, 
 
     uint16_t preamble = handle->preamble_buffer;
 
-    LOG_INFO("Preamble buffer: 0x%04X", preamble);
+    LOG_DEBUG("Preamble buffer: 0x%04X", preamble);
 
     if (preamble == handle->preamble)
     {
@@ -177,7 +177,7 @@ static int _process_bit(byte_assembler_handle_t *handle, decoder_handle_t *ctx, 
 
     if (handle->bits_collected >= 8)
     {
-        LOG_INFO("Assembled byte: 0x%02X", handle->current_byte);
+        LOG_DEBUG("Assembled byte: 0x%02X", handle->current_byte);
         if (decoder_process_byte(ctx, handle->current_byte))
         {
             LOG_ERROR("Failed to process assembled byte");

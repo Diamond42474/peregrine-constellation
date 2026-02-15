@@ -33,12 +33,10 @@ void send_byte(decoder_handle_t *decoder, unsigned char byte, size_t sample_size
     {
         if ((byte >> bit) & 1)
         {
-            LOG_INFO("Sending bit 1");
             generate_sine_wave(buffer, FQ1, sample_rate, sample_size);
         }
         else
         {
-            LOG_INFO("Sending bit 0");
             generate_sine_wave(buffer, FQ0, sample_rate, sample_size);
         }
         decoder_process_samples(decoder, buffer, sample_size);
