@@ -23,7 +23,6 @@ int byte_assembler_init(byte_assembler_handle_t *handle)
 
     handle->current_byte = 0;
     handle->bits_collected = 0;
-    handle->bit_order = BIT_ORDER_MSB_FIRST;
     handle->preamble = 0xABBA; // Default preamble
     handle->preamble_buffer = 0;
     handle->preamble_found = false;
@@ -39,19 +38,6 @@ int byte_assembler_deinit(byte_assembler_handle_t *handle)
         LOG_ERROR("Byte assembler handle is NULL");
         return -1;
     }
-
-    return 0;
-}
-
-int byte_assembler_set_bit_order(byte_assembler_handle_t *handle, bit_order_t order)
-{
-    if (!handle)
-    {
-        LOG_ERROR("Byte assembler handle is NULL");
-        return -1;
-    }
-
-    handle->bit_order = order;
 
     return 0;
 }
@@ -143,28 +129,11 @@ static int _process_bit(byte_assembler_handle_t *handle, decoder_handle_t *ctx, 
         break;
     }
 
-    // Shift bit into preamble buffer
-    if (handle->bit_order == BIT_ORDER_LSB_FIRST)
-    {
-        // Incoming bit is MSB
-        handle->preamble_buffer =
-            (handle->preamble_buffer >> 1) |
-            ((uint16_t)(bit & 1) << 15);
-    }
-    else
-    {
-        // Incoming bit is LSB
-        handle->preamble_buffer =
-            (handle->preamble_buffer << 1) |
-            (bit & 1);
-    }
+    handle->preamble_buffer =
+        (handle->preamble_buffer << 1) |
+        (uint16_t)(bit & 1);
 
     uint16_t preamble = handle->preamble_buffer;
-
-    if (handle->bit_order == BIT_ORDER_LSB_FIRST)
-    {
-        preamble = swap16(preamble);
-    }
 
     LOG_INFO("Preamble buffer: 0x%04X", preamble);
 
@@ -176,8 +145,8 @@ static int _process_bit(byte_assembler_handle_t *handle, decoder_handle_t *ctx, 
         handle->current_byte = 0;
         handle->bits_collected = 0;
 
-        uint8_t hi = (handle->preamble >> 8) & 0xFF;
-        uint8_t lo = handle->preamble & 0xFF;
+        uint8_t hi = (preamble >> 8) & 0xFF;
+        uint8_t lo = preamble & 0xFF;
 
         if (decoder_process_byte(ctx, hi))
         {
@@ -202,15 +171,7 @@ static int _process_bit(byte_assembler_handle_t *handle, decoder_handle_t *ctx, 
         return 0;
     }
 
-    // Now assemble bytes as normal
-    if (handle->bit_order == BIT_ORDER_LSB_FIRST)
-    {
-        handle->current_byte |= (bit & 0x01) << handle->bits_collected;
-    }
-    else // MSB first
-    {
-        handle->current_byte |= (bit & 0x01) << (7 - handle->bits_collected);
-    }
+    handle->current_byte |= (bit & 0x01) << (7 - handle->bits_collected);
 
     handle->bits_collected++;
 
