@@ -1,21 +1,25 @@
 #include "utils/fsk_utils.h"
 #include <math.h>
 
-fsk_timing_t fsk_calculate_timing(float f0, float f1, int baud_rate)
+#define MIN_SAMPLES_PER_BIT (16)
+
+/**
+ * @brief Calculate the recommended sample rate for FSK modulation based on the given frequencies and baud rate.
+ *
+ * @param f1 The first frequency (Hz)
+ * @param f2 The second frequency (Hz)
+ * @param baud The baud rate (symbols per second)
+ *
+ * @return The recommended sample rate in Hz
+ */
+double calculate_sample_rate(double f1, double f2, double baud)
 {
-    fsk_timing_t result;
-    float max_frequency = 0;
-    if (f0 > f1)
-    {
-        max_frequency = f0;
-    }
-    else
-    {
-        max_frequency = f1;
-    }
+    double fmax = (f1 > f2) ? f1 : f2;
 
-    result.sample_rate = (size_t)(max_frequency * 3);
-    result.samples_per_bit = (size_t)(result.sample_rate / baud_rate);
+    // Minimum samples per symbol from Nyquist
+    double n_nyquist = ceil((2.0 * fmax) / baud);
 
-    return result;
+    double N = (n_nyquist > MIN_SAMPLES_PER_BIT) ? n_nyquist : MIN_SAMPLES_PER_BIT;
+
+    return baud * N;
 }
