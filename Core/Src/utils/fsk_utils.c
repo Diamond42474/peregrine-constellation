@@ -17,7 +17,7 @@ double calculate_sample_rate(double f1, double f2, double baud)
     double fmax = (f1 > f2) ? f1 : f2;
 
     // Minimum samples per symbol from Nyquist
-    double n_nyquist = ceil((2.0 * fmax) / baud);
+    double n_nyquist = ceil((4.0 * fmax) / baud);
 
     double N = (n_nyquist > MIN_SAMPLES_PER_BIT) ? n_nyquist : MIN_SAMPLES_PER_BIT;
 
