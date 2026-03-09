@@ -66,6 +66,7 @@ int main(void)
     // Initialize FSK Decoder
     fsk_decoder_init(&fsk_decoder);
     fsk_decoder_set_rates(&fsk_decoder, samples_per_bit, (int)sample_rate);
+    fsk_decoder_set_sample_buffer_multiplier(&fsk_decoder, 3);
     fsk_decoder_set_frequencies(&fsk_decoder, FQ0, FQ1);
     fsk_decoder_set_power_threshold(&fsk_decoder, 100000.0f);
     // Initialize Byte Assembler
