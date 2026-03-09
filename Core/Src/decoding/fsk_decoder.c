@@ -227,11 +227,6 @@ int fsk_decoder_task(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
     {
         size_t required_samples = (size_t)handle->configs.sample_size;
 
-        if (!handle->symbol_timing_locked)
-        {
-            required_samples *= handle->configs.sample_buffer_multiplier;
-        }
-
         LOG_DEBUG("Decoding samples, current sample buffer size: %zu", circular_buffer_count(&ctx->input_buffer));
         if (circular_buffer_count(&ctx->input_buffer) >= required_samples)
         {
@@ -273,7 +268,13 @@ static int _process_samples(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
 
     if (!handle->symbol_timing_locked)
     {
+        size_t available_samples = circular_buffer_count(&ctx->input_buffer);
         size_t timing_window_size = (size_t)handle->configs.sample_size * handle->configs.sample_buffer_multiplier;
+        if (timing_window_size > available_samples)
+        {
+            timing_window_size = available_samples;
+        }
+
         uint16_t *timing_window = malloc(timing_window_size * sizeof(uint16_t));
 
         if (!timing_window)
