@@ -75,7 +75,7 @@ int main(void)
     {
         LOG_ERROR("Failed to set preamble for byte assembler");
         ret = -1;
-        goto failed;
+        return ret;
     } // Buffer for 256 bytes
 
     // Initialize Decoder
@@ -93,14 +93,18 @@ int main(void)
         {
             LOG_ERROR("Decoder task failed");
             ret = -1;
-            goto failed;
+            return ret;
         }
     }
+
+    // Send < samples_per_bit to test timing recovery mechanism
+    uint16_t sample_buffer[samples_per_bit];
+    generate_sine_wave(sample_buffer, FQ0, sample_rate, 316);
+    decoder_process_samples(&decoder, sample_buffer, 316);
 
     // Send half a byte of 0s to test bit alignment mechanism
     for (int i = 0; i < 12; i++)
     {
-        uint16_t sample_buffer[samples_per_bit];
         generate_sine_wave(sample_buffer, FQ0, sample_rate, sizeof(sample_buffer) / sizeof(sample_buffer[0]));
         decoder_process_samples(&decoder, sample_buffer, samples_per_bit); // Placeholder for sample input
 
