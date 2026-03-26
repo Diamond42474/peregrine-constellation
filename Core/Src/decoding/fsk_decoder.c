@@ -357,6 +357,10 @@ static int _update_symbol_timing(fsk_decoder_handle_t *handle, decoder_handle_t 
     }
 
     handle->symbol_timing_offset = offset;
+    for (int i = 0; i < offset; i++)
+    {
+	    circular_buffer_remove(&ctx->input_buffer);
+    }
     LOG_INFO("Symbol timing offset updated: %zu", offset);
 
     return 0;
