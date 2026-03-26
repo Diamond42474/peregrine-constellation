@@ -29,5 +29,6 @@ bool circular_buffer_is_full(circular_buffer_t *cb);
 bool circular_buffer_is_empty(circular_buffer_t *cb);
 void circular_buffer_reset(circular_buffer_t *cb);
 int circular_buffer_set_head(circular_buffer_t *cb, size_t index);
+int circular_buffer_remove(circular_buffer_t *cb);
 
 #endif // CIRCULAR_BUFFER_H

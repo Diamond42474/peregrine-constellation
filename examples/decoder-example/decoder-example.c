@@ -51,7 +51,7 @@ int main(void)
 {
     int ret = 0;
 
-    log_init(LOG_LEVEL_INFO);
+    log_init(LOG_LEVEL_DEBUG);
 
     decoder_handle_t decoder;
     fsk_decoder_handle_t fsk_decoder;
@@ -65,8 +65,8 @@ int main(void)
 
     // Initialize FSK Decoder
     fsk_decoder_init(&fsk_decoder);
-    fsk_decoder_set_rates(&fsk_decoder, samples_per_bit, (int)sample_rate);
-    fsk_decoder_set_sample_buffer_multiplier(&fsk_decoder, 3);
+    fsk_decoder_set_symbol_sample_size(&fsk_decoder, samples_per_bit, 3); // Buffer for 3 symbols to allow for timing recovery
+    fsk_decoder_set_sample_rate(&fsk_decoder, sample_rate);
     fsk_decoder_set_frequencies(&fsk_decoder, FQ0, FQ1);
     fsk_decoder_set_power_threshold(&fsk_decoder, 100000.0f);
     // Initialize Byte Assembler
@@ -82,7 +82,7 @@ int main(void)
     decoder_init(&decoder);
     decoder_set_bit_decoder(&decoder, BIT_DECODER_FSK, &fsk_decoder);
     decoder_set_byte_decoder(&decoder, BYTE_DECODER_BIT_STUFFING, &byte_assembler);
-    decoder_set_input_buffer_size(&decoder, samples_per_bit * 128); // Input buffer for samples
+    decoder_set_input_buffer_size(&decoder, samples_per_bit * 5); // Input buffer for samples
     decoder_set_output_buffer_size(&decoder, 10);                   // Output buffer for packets
 
     // Main processing loop
@@ -99,8 +99,8 @@ int main(void)
 
     // Send < samples_per_bit to test timing recovery mechanism
     uint16_t sample_buffer[samples_per_bit];
-    generate_sine_wave(sample_buffer, FQ0, sample_rate, 316);
-    decoder_process_samples(&decoder, sample_buffer, 316);
+    generate_sine_wave(sample_buffer, FQ0, sample_rate, 825*3);
+    decoder_process_samples(&decoder, sample_buffer, 825*3); // Placeholder for sample input
 
     // Send half a byte of 0s to test bit alignment mechanism
     for (int i = 0; i < 12; i++)

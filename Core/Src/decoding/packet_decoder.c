@@ -38,6 +38,9 @@ int packet_decoder_process_byte(packet_decoder_t *handle, unsigned char byte)
         return -1;
     }
 
+    LOG_INFO("Byte received: 0x%02X\t%c", byte, byte);
+
+    return 0;
     LOG_INFO("Processing byte: 0x%02X", byte);
     handle->packet_buffer[handle->packet_buffer_index++] = byte;
 

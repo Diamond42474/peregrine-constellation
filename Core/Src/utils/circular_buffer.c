@@ -235,7 +235,7 @@ int circular_buffer_set_head(circular_buffer_t *cb, size_t index)
 
     cb->head = index;
     cb->full = (cb->head == cb->tail);
-    
+
     // Recalculate count
     if (cb->full)
     {
@@ -249,6 +249,34 @@ int circular_buffer_set_head(circular_buffer_t *cb, size_t index)
     {
         cb->count = cb->max + cb->head - cb->tail;
     }
+
+    return 0; // Success
+}
+
+/**
+ * @brief Remove the oldest element from the circular buffer without copying it out.
+ *
+ * @param cb Pointer to the circular buffer handle.
+ *
+ * @return error code: 0 = successful, -1 = failed
+ */
+int circular_buffer_remove(circular_buffer_t *cb)
+{
+    if (!cb)
+    {
+        LOG_ERROR("Handle is NULL");
+        return -1; // Invalid parameter
+    }
+
+    if (circular_buffer_is_empty(cb))
+    {
+        LOG_ERROR("Cannot remove from circular buffer because it is empty");
+        return -1; // Buffer is empty
+    }
+
+    cb->full = false;
+    cb->tail = (cb->tail + 1) % cb->max;
+    cb->count--;
 
     return 0; // Success
 }
