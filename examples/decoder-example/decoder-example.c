@@ -51,7 +51,7 @@ int main(void)
 {
     int ret = 0;
 
-    log_init(LOG_LEVEL_DEBUG);
+    log_init(LOG_LEVEL_INFO);
 
     decoder_handle_t decoder;
     fsk_decoder_handle_t fsk_decoder;
@@ -83,10 +83,10 @@ int main(void)
     decoder_set_bit_decoder(&decoder, BIT_DECODER_FSK, &fsk_decoder);
     decoder_set_byte_decoder(&decoder, BYTE_DECODER_BIT_STUFFING, &byte_assembler);
     decoder_set_input_buffer_size(&decoder, samples_per_bit * 5); // Input buffer for samples
-    decoder_set_output_buffer_size(&decoder, 10);                   // Output buffer for packets
+    decoder_set_output_buffer_size(&decoder, 10);                 // Output buffer for packets
 
     // Main processing loop
-    LOG_INFO("Starting main processing loop");
+    LOG_INFO("Startup loop");
     while (decoder_busy(&decoder))
     {
         if (decoder_task(&decoder))
@@ -96,12 +96,15 @@ int main(void)
             return ret;
         }
     }
-
+    LOG_DEBUG("Decoder is idle, starting test signal generation");
+    
     // Send < samples_per_bit to test timing recovery mechanism
-    uint16_t sample_buffer[samples_per_bit];
-    generate_sine_wave(sample_buffer, FQ0, sample_rate, 825*3);
-    decoder_process_samples(&decoder, sample_buffer, 825*3); // Placeholder for sample input
+    LOG_INFO("Sending noise signal to test timing recovery mechanism");
+    uint16_t sample_buffer[samples_per_bit * 5];
+    generate_sine_wave(sample_buffer, 100, sample_rate, samples_per_bit * 3);
+    decoder_process_samples(&decoder, sample_buffer, samples_per_bit * 3); // Placeholder for sample input
 
+    LOG_WARN("Sending tones to test bit detection mechanism");
     // Send half a byte of 0s to test bit alignment mechanism
     for (int i = 0; i < 12; i++)
     {
@@ -115,6 +118,7 @@ int main(void)
         }
     }
 
+    LOG_WARN("Sending test signal (0xABBA) using FSK modulation");
     // Send 0xABBA in the form of alternating sine waves of 1100 and 2200Hz
     send_byte(&decoder, 0xAB, samples_per_bit, sample_rate);
     send_byte(&decoder, 0xBA, samples_per_bit, sample_rate);

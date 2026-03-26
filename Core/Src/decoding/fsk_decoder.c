@@ -9,7 +9,7 @@
 #include "c-logger.h"
 #include "utils/circular_buffer.h"
 
-#define QUALITY_THRESHOLD 0.2f
+#define QUALITY_THRESHOLD 0.75f
 
 static int _process_samples(fsk_decoder_handle_t *handle, decoder_handle_t *ctx);
 static size_t _calculate_window_offset(fsk_decoder_handle_t *handle, decoder_handle_t *ctx);

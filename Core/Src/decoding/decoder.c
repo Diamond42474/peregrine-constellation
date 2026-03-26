@@ -129,6 +129,8 @@ int decoder_set_bit_decoder(decoder_handle_t *handle, bit_decoder_e type, void *
     handle->bit_decoder = type;
     handle->bit_decoder_handle = bit_decoder_handle;
 
+    LOG_INFO("Bit decoder set to type %d", type);
+
 failed:
     return ret;
 }
@@ -196,10 +198,12 @@ int decoder_task(decoder_handle_t *handle)
         }
 
         handle->state = DECODER_STATE_IDLE;
+        LOG_INFO("Decoder initialization complete");
         break;
     case DECODER_STATE_IDLE:
         // Check if subtasks need to process
         // Adding data to input buffer should trigger processing
+        LOG_DEBUG("Decoder is idle, checking if subtasks need to process");
         _handle_sub_tasks(handle);
         break;
     case DECODER_STATE_PROCESSING:
@@ -432,10 +436,12 @@ static void _handle_sub_tasks(decoder_handle_t *handle)
     switch (handle->bit_decoder)
     {
     case BIT_DECODER_FSK:
+        LOG_DEBUG("Handling FSK decoder task");
         fsk_decoder_task((fsk_decoder_handle_t *)handle->bit_decoder_handle, handle);
         break;
     case BIT_DECODER_NONE:
         // No bit decoder set
+        LOG_WARN("No bit decoder set, skipping bit decoder task");
         break;
     default:
         LOG_ERROR("Unknown bit decoder type");

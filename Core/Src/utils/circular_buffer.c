@@ -67,6 +67,8 @@ int circular_buffer_dynamic_init(circular_buffer_t *cb, size_t element_size, siz
     cb->dynamic = true;
     cb->count = 0;
 
+    LOG_DEBUG("Circular buffer initialized with dynamic memory allocation: element_size=%zu, max=%zu", element_size, max);
+
     return 0; // Success
 }
 
