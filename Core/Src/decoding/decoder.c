@@ -13,6 +13,7 @@
 #include "decoding/byte_assembler.h"
 
 static void _handle_sub_tasks(decoder_handle_t *handle);
+static bool _sub_tasks_busy(decoder_handle_t *handle);
 
 /**
  * @brief Initializes decoder
@@ -208,7 +209,7 @@ int decoder_task(decoder_handle_t *handle)
         break;
     case DECODER_STATE_PROCESSING:
         _handle_sub_tasks(handle);
-        if (circular_buffer_is_empty(&handle->input_buffer))
+        if (!_sub_tasks_busy(handle))
         {
             handle->state = DECODER_STATE_IDLE;
         }
@@ -447,4 +448,23 @@ static void _handle_sub_tasks(decoder_handle_t *handle)
         LOG_ERROR("Unknown bit decoder type");
         break;
     }
+}
+
+static bool _sub_tasks_busy(decoder_handle_t *handle)
+{
+    bool busy = false;
+
+    switch (handle->bit_decoder)
+    {
+    case BIT_DECODER_FSK:
+        return fsk_decoder_busy((fsk_decoder_handle_t *)handle->bit_decoder_handle, handle);
+        break;
+    case BIT_DECODER_NONE:
+        // No bit decoder set
+        break;
+    default:
+        LOG_ERROR("Unknown bit decoder type");
+        break;
+    }
+    return false;
 }

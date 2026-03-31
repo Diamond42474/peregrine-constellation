@@ -333,6 +333,17 @@ failed:
     return ret;
 }
 
+bool fsk_decoder_busy(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
+{
+    if (!handle)
+    {
+        LOG_ERROR("FSK decoder handle is NULL");
+        return false;
+    }
+
+    return circular_buffer_count(&ctx->input_buffer) >= (size_t)handle->configs.symbol_sample_size * handle->configs.buffer_symbol_count;
+}
+
 static int _update_symbol_timing(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
 {
     int ret = 0;
@@ -345,7 +356,7 @@ static int _update_symbol_timing(fsk_decoder_handle_t *handle, decoder_handle_t 
 
     if (circular_buffer_count(&ctx->input_buffer) < (size_t)handle->configs.symbol_sample_size * handle->configs.buffer_symbol_count)
     {
-        LOG_DEBUG("Not enough samples in circular buffer to update symbol timing");
+        LOG_WARN("Not enough samples in circular buffer to update symbol timing");
         return 0;
     }
 
@@ -359,7 +370,7 @@ static int _update_symbol_timing(fsk_decoder_handle_t *handle, decoder_handle_t 
     handle->symbol_timing_offset = offset;
     for (int i = 0; i < offset; i++)
     {
-	    circular_buffer_remove(&ctx->input_buffer);
+        circular_buffer_remove(&ctx->input_buffer);
     }
     LOG_INFO("Symbol timing offset updated: %zu", offset);
 
@@ -417,6 +428,7 @@ failed:
 
 static size_t _calculate_window_offset(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
 {
+    LOG_INFO("Finding optimal window offset for symbol timing recovery");
     size_t symbol_sample_size = (size_t)handle->configs.symbol_sample_size;
     size_t max_offset_range = 0;
     size_t best_offset = 0;
@@ -428,34 +440,31 @@ static size_t _calculate_window_offset(fsk_decoder_handle_t *handle, decoder_han
 
     if (symbol_sample_size == 0 || num_samples < symbol_sample_size * handle->configs.buffer_symbol_count)
     {
+        LOG_ERROR("Not enough samples in circular buffer to calculate window offset (num_samples: %zu, required: %zu)", num_samples, symbol_sample_size * handle->configs.buffer_symbol_count);
         return -1;
     }
 
     if (num_samples == symbol_sample_size)
     {
+        LOG_WARN("Number of samples equals symbol sample size, no offset calculation needed");
         return 0;
     }
 
     max_offset_range = num_samples - symbol_sample_size + 1;
-    if (max_offset_range > symbol_sample_size)
-    {
-        max_offset_range = symbol_sample_size;
-    }
-
-    for (size_t offset = 0; offset < max_offset_range; offset++)
+    for (size_t offset = 0; offset < num_samples - symbol_sample_size + 1; offset++)
     {
         float power_0 = 0.0f;
         float power_1 = 0.0f;
 
         if (goertzel_compute_power_circular_buff(&temp_cb, symbol_sample_size, handle->configs.freq_0, handle->configs.sample_rate, &power_0))
         {
-            LOG_DEBUG("Not enough samples in circular buffer for offset %zu", offset);
+            LOG_ERROR("Not enough samples in circular buffer for offset %zu", offset);
             break;
         }
 
         if (goertzel_compute_power_circular_buff(&temp_cb, symbol_sample_size, handle->configs.freq_1, handle->configs.sample_rate, &power_1))
         {
-            LOG_DEBUG("Not enough samples in circular buffer for offset %zu", offset);
+            LOG_ERROR("Not enough samples in circular buffer for offset %zu", offset);
             break;
         }
 
@@ -489,13 +498,13 @@ static float _calculate_quality(fsk_decoder_handle_t *handle, decoder_handle_t *
     {
         if (goertzel_compute_power_circular_buff(&temp_cb, handle->configs.symbol_sample_size, handle->configs.freq_0, handle->configs.sample_rate, &power_0))
         {
-            LOG_DEBUG("Not enough samples in circular buffer for quality calculation at symbol %d", i);
+            LOG_WARN("Not enough samples in circular buffer for quality calculation at symbol %d", i);
             break;
         }
 
         if (goertzel_compute_power_circular_buff(&temp_cb, handle->configs.symbol_sample_size, handle->configs.freq_1, handle->configs.sample_rate, &power_1))
         {
-            LOG_DEBUG("Not enough samples in circular buffer for quality calculation at symbol %d", i);
+            LOG_WARN("Not enough samples in circular buffer for quality calculation at symbol %d", i);
             break;
         }
 
