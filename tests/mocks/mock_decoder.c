@@ -1,18 +1,19 @@
 #include "decoding/decoder.h"
+#include "c-logger.h"
 
 static void _default_process_byte(unsigned char byte)
 {
-
+    LOG_DEBUG("Processed byte: 0x%02X", byte);
 }
 
 static void _default_process_bit(bool bit)
 {
-
+    LOG_DEBUG("Processed bit: %d", bit);
 }
 
 static void _default_process_packet(packet_t *packet)
 {
-
+    LOG_DEBUG("Processed packet with payload length: %d", packet->content.payload_length);
 }
 
 static void (*byte_processor)(unsigned char) = _default_process_byte;
