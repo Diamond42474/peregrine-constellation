@@ -163,6 +163,30 @@ void detect_signal(void)
     TEST_ASSERT_EQUAL(bit, false);
 }
 
+void timing_recovery(void)
+{
+    init();
+
+    // Send noise to fill the buffer and force it be out of sync
+    for (int i = 0; i < 5; i++)
+    {
+        send_noise(500);
+        process();
+    }
+
+    // Now send a valid bit and see if it can recover timing and decode it
+    send_bit(1);
+    process();
+
+    // Ensure we can flush out the valid bit
+    send_noise(SYMBOL_SAMPLE_SIZE);
+    process();
+
+    bool bit = 0;
+    TEST_ASSERT_TRUE_MESSAGE(circular_buffer_pop(&bit_circular_buffer, &bit) == 0, "Failed to pop bit from circular buffer after timing recovery");
+    TEST_ASSERT_EQUAL(bit, true);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -172,6 +196,7 @@ int main(void)
     RUN_TEST(init);
     RUN_TEST(simple_bit_decoding);
     RUN_TEST(detect_signal);
+    RUN_TEST(timing_recovery);
 
     return UNITY_END();
 }
