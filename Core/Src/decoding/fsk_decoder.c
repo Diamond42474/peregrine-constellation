@@ -85,8 +85,6 @@ failed:
  */
 int fsk_decoder_set_symbol_sample_size(fsk_decoder_handle_t *handle, size_t _symbol_sample_size, size_t _buffer_symbol_count)
 {
-    int ret = 0;
-
     if (!handle)
     {
         LOG_ERROR("FSK decoder handle is NULL");
@@ -107,6 +105,8 @@ int fsk_decoder_set_symbol_sample_size(fsk_decoder_handle_t *handle, size_t _sym
 
     handle->configs.symbol_sample_size = _symbol_sample_size;
     handle->configs.buffer_symbol_count = _buffer_symbol_count;
+
+    return 0;
 }
 
 /**
@@ -119,8 +119,6 @@ int fsk_decoder_set_symbol_sample_size(fsk_decoder_handle_t *handle, size_t _sym
  */
 int fsk_decoder_set_sample_rate(fsk_decoder_handle_t *handle, int sample_rate)
 {
-    int ret = 0;
-
     if (!handle)
     {
         LOG_ERROR("FSK decoder handle is NULL");
@@ -134,6 +132,8 @@ int fsk_decoder_set_sample_rate(fsk_decoder_handle_t *handle, int sample_rate)
     }
 
     handle->configs.sample_rate = sample_rate;
+
+    return 0;
 }
 
 /**
