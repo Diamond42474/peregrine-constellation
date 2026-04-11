@@ -13,7 +13,7 @@
 #define POWER_THRESHOLD (1E10)
 #define SAMPLE_RATE (26400)      // Based off decoder_example.c calculated for 32 baud
 #define SYMBOL_SAMPLE_SIZE (825) // Based off decoder_example.c calculated for 32 baud
-#define BUFFER_SYMBOL_COUNT (4)  // Minimum of 3 is good for timing recovery
+#define BUFFER_SYMBOL_COUNT (3)  // Minimum of 3 is good for timing recovery
 
 extern void mock_decoder_reset(void);
 extern void mock_decoder_set_bit_processor(void (*processor)(bool));
@@ -129,16 +129,37 @@ void simple_bit_decoding(void)
 {
     init();
 
-    // fsk decoder requires 3x symbol size to reliably detect signal and recover timing, 
-    //so we need to send multiple bits to get it into the decoding state
+    // fsk decoder requires 3x symbol size to reliably detect signal and recover timing,
+    // so we need to send multiple bits to get it into the decoding state
 
     send_bit(0); // The bit we're looking for
-    send_bit(1);
     send_bit(1);
     send_bit(1);
     process();
     bool bit = 1; // Opposite of what it should be to ensure it gets updated
     TEST_ASSERT_TRUE_MESSAGE(circular_buffer_pop(&bit_circular_buffer, &bit) == 0, "Failed to pop bit from circular buffer");
+    TEST_ASSERT_EQUAL(bit, false);
+}
+
+void detect_signal(void)
+{
+    init();
+
+    // Send 5 symbols worth of noise
+    for (int i = 0; i < 5; i++)
+    {
+        send_noise(SYMBOL_SAMPLE_SIZE);
+        process();
+    }
+
+    bool bit = 1;
+    TEST_ASSERT_TRUE_MESSAGE(circular_buffer_pop(&bit_circular_buffer, &bit) != 0, "Unexpectedly decoded a bit from noise");
+
+    send_bit(0); // Send a valid bit to ensure it can still decode after noise
+    process();
+
+    bit = 1;
+    TEST_ASSERT_TRUE_MESSAGE(circular_buffer_pop(&bit_circular_buffer, &bit) == 0, "Failed to pop bit from circular buffer after noise");
     TEST_ASSERT_EQUAL(bit, false);
 }
 
@@ -150,6 +171,7 @@ int main(void)
 
     RUN_TEST(init);
     RUN_TEST(simple_bit_decoding);
+    RUN_TEST(detect_signal);
 
     return UNITY_END();
 }
