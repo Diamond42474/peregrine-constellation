@@ -1,9 +1,10 @@
-##  (2026-04-11)
+##  (2026-04-15)
 
 
 ### Features
 
 * Added AI generated workflow ([9d29f0a](https://github.com/Diamond42474/peregrine-constellation/commit/9d29f0aa2b12fc458709e75bc07a2ec3bbeb7349))
+* Added auto-timing recovery ([92e4567](https://github.com/Diamond42474/peregrine-constellation/commit/92e4567c47341504ac8cbd07d8dd4f4b67bb62c3))
 * Added set head function for circular buffer for use with DMA operations ([f52a219](https://github.com/Diamond42474/peregrine-constellation/commit/f52a2193ded662bc95c007145fd72e8dfd61be71))
 * Added Unity testing framework ([fd0f4ef](https://github.com/Diamond42474/peregrine-constellation/commit/fd0f4ef00d3bedb649eea5b460e3694e8d9a5322))
 * built out cobs decoder pipeline and integrated it into decoder pipeline manager ([595ef48](https://github.com/Diamond42474/peregrine-constellation/commit/595ef485ccc787c018f1ed9d273846b84c5a52fd))
