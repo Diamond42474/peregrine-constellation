@@ -435,6 +435,7 @@ static size_t _calculate_window_offset(fsk_decoder_handle_t *handle, decoder_han
     size_t max_offset_range = 0;
     size_t best_offset = 0;
     float max_power_diff = -1.0f;
+    int jump = handle->configs.symbol_sample_size / 12;
 
     size_t num_samples = circular_buffer_count(&ctx->input_buffer);
 
@@ -453,7 +454,7 @@ static size_t _calculate_window_offset(fsk_decoder_handle_t *handle, decoder_han
     }
 
     max_offset_range = num_samples - symbol_sample_size + 1;
-    for (size_t offset = 0; offset < num_samples - symbol_sample_size + 1; offset++)
+    for (size_t offset = 0; offset < num_samples - symbol_sample_size + 1; offset += jump)
     {
         float power_0 = 0.0f;
         float power_1 = 0.0f;
@@ -470,7 +471,10 @@ static size_t _calculate_window_offset(fsk_decoder_handle_t *handle, decoder_han
             break;
         }
 
-        circular_buffer_remove(&temp_cb); // Move the window by one sample for the next offset calculation
+        for (int j = 0; j < (int)jump; j++)
+        {
+            circular_buffer_remove(&temp_cb); // Move the window by one sample for the next offset calculation
+        }
 
         {
             float power_diff = fabsf(power_1 - power_0);
@@ -482,7 +486,7 @@ static size_t _calculate_window_offset(fsk_decoder_handle_t *handle, decoder_han
         }
     }
 
-    LOG_DEBUG("Best offset found: %zu with power difference: %f", best_offset, max_power_diff);
+    LOG_INFO("Best offset found: %d with power difference: %f", best_offset, max_power_diff);
     return best_offset;
 }
 
