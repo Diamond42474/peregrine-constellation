@@ -400,6 +400,8 @@ static int _process_samples(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
     if (power_0 < handle->configs.power_threshold && power_1 < handle->configs.power_threshold)
     {
         LOG_DEBUG("No significant signal detected (power_0: %f, power_1: %f)", power_0, power_1);
+        handle->state = FSK_DECODER_WAITING_FOR_SIGNAL;
+        handle->signal_detected = false;
         goto cleanup;
     }
 
