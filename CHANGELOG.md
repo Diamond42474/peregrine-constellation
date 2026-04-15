@@ -24,5 +24,6 @@
 
 * Added state-based flags for grabbing when the decoder is busy or not ([30c9bcc](https://github.com/Diamond42474/peregrine-constellation/commit/30c9bcc2da0f6f1f22c2384aa32c8321b47a0cb8))
 * Decoder now uses single input and output buffer that's shared between sub-modules ([df63923](https://github.com/Diamond42474/peregrine-constellation/commit/df639237c8097ec9aceca616e93f625bf0fa6950))
+* Faster FSK window offset calculation ([cc67878](https://github.com/Diamond42474/peregrine-constellation/commit/cc6787837b8de2af79ffbd67a8923a0438bd0316))
 * simplified fsk timing calculator ([9759f0c](https://github.com/Diamond42474/peregrine-constellation/commit/9759f0ca30091dcae83014938cc93e22219ec267))
 
