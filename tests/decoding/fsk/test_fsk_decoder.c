@@ -410,11 +410,11 @@ int main(void)
     log_init(LOG_LEVEL_DEBUG);
 
     RUN_TEST(init);
-    //RUN_TEST(simple_bit_decoding);
-    // RUN_TEST(detect_signal);
-    // RUN_TEST(timing_recovery);
-    // RUN_TEST(auto_timing_recovery);
-    //RUN_TEST(timing_recovery_with_samples);
+    RUN_TEST(simple_bit_decoding);
+    RUN_TEST(detect_signal);
+    RUN_TEST(timing_recovery);
+    RUN_TEST(auto_timing_recovery);
+    RUN_TEST(timing_recovery_with_samples);
     RUN_TEST(test_baud32);
 
     return UNITY_END();
