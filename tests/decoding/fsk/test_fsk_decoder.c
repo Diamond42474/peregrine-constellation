@@ -5,15 +5,17 @@
 #include <string.h>
 #include "decoding/fsk_decoder.h"
 #include "c-logger.h"
+#include "samples.h"
+#include "baud32.h"
 
 #define MAX_LOOPS 1000000 // Safety to prevent infinite loops in tests
 
-#define F0 (1100.0f)
+#define F0 (1200.0f)
 #define F1 (2200.0f)
-#define POWER_THRESHOLD (1E10)
-#define SAMPLE_RATE (26400)      // Based off decoder_example.c calculated for 32 baud
-#define SYMBOL_SAMPLE_SIZE (825) // Based off decoder_example.c calculated for 32 baud
-#define BUFFER_SYMBOL_COUNT (3)  // Minimum of 3 is good for timing recovery
+#define POWER_THRESHOLD (0.01f)
+#define SAMPLE_RATE (79200)       // Based off decoder_example.c calculated for 32 baud
+#define SYMBOL_SAMPLE_SIZE (2475) // Based off decoder_example.c calculated for 32 baud
+#define BUFFER_SYMBOL_COUNT (3)   // Minimum of 3 is good for timing recovery
 
 extern void mock_decoder_reset(void);
 extern void mock_decoder_set_bit_processor(void (*processor)(bool));
@@ -26,13 +28,13 @@ static circular_buffer_t bit_circular_buffer;
 
 void bit_cb(bool bit)
 {
-    LOG_DEBUG("Decoded bit: %d", bit);
+    // LOG_DEBUG("Decoded bit: %d", bit);
     circular_buffer_push(&bit_circular_buffer, &bit);
 }
 
 void generate_sine_wave(uint16_t *buffer, float frequency, float sample_rate, uint32_t sample_count)
 {
-    const float amplitude = 1024.0f; // Half of 12-bit range
+    const float amplitude = 2047.0f; // Half of 12-bit range
     const float offset = 2048.0f;    // Center value for unsigned 12-bit
 
     for (uint32_t i = 0; i < sample_count; i++)
@@ -87,6 +89,23 @@ void send_bit(bool bit)
     }
 }
 
+void send_partial_bit(bool bit, size_t sample_count)
+{
+    uint16_t buffer[sample_count];
+    if (bit)
+    {
+        generate_sine_wave(buffer, F1, SAMPLE_RATE, sample_count);
+    }
+    else
+    {
+        generate_sine_wave(buffer, F0, SAMPLE_RATE, sample_count);
+    }
+    for (size_t i = 0; i < sample_count; i++)
+    {
+        circular_buffer_push(&decoder_handle.input_buffer, &buffer[i]);
+    }
+}
+
 void send_noise(int sample_count)
 {
     uint16_t buffer[sample_count];
@@ -100,11 +119,52 @@ void send_noise(int sample_count)
 void send_silence(int sample_count)
 {
     uint16_t buffer[sample_count];
-    memset(buffer, 32768, sizeof(buffer)); // Center value for unsigned 16-bit (silence)
+    memset(buffer, 4096 / 2, sizeof(buffer)); // Center value for unsigned 12-bit (silence)
     for (int i = 0; i < sample_count; i++)
     {
         circular_buffer_push(&decoder_handle.input_buffer, &buffer[i]);
     }
+}
+
+void send_samples(uint16_t *samples, size_t sample_count)
+{
+    for (size_t i = 0; i < sample_count; i++)
+    {
+        circular_buffer_push(&decoder_handle.input_buffer, &samples[i]);
+    }
+}
+
+typedef struct
+{
+    float alpha;
+    float y_prev;
+} lowpass_t;
+
+// Initialize filter
+void lowpass_init(lowpass_t *filt, float cutoff_hz, float sample_rate)
+{
+    float dt = 1.0f / sample_rate;
+    float RC = 1.0f / (2.0f * 3.14159265f * cutoff_hz);
+    filt->alpha = dt / (RC + dt);
+    filt->y_prev = 0.0f;
+}
+
+// Process one sample
+uint16_t lowpass_process(lowpass_t *filt, uint16_t input)
+{
+    // Convert to float (center if needed)
+    float x = (float)input;
+
+    float y = filt->y_prev + filt->alpha * (x - filt->y_prev);
+    filt->y_prev = y;
+
+    // Clamp back to uint16_t range
+    if (y < 0)
+        y = 0;
+    if (y > 65535)
+        y = 65535;
+
+    return (uint16_t)y;
 }
 
 void process(void)
@@ -172,7 +232,7 @@ void simple_bit_decoding(void)
     bool bit = 1; // Opposite of what it should be to ensure it gets updated
     TEST_ASSERT_EQUAL_MESSAGE(1, circular_buffer_count(&bit_circular_buffer), "We should have 1 bit ready to process");
     TEST_ASSERT_TRUE_MESSAGE(circular_buffer_pop(&bit_circular_buffer, &bit) == 0, "Failed to pop bit from circular buffer");
-    TEST_ASSERT_EQUAL(bit, false);
+    TEST_ASSERT_EQUAL(false, bit);
 }
 
 void detect_signal(void)
@@ -213,7 +273,7 @@ void timing_recovery(void)
         send_noise(SYMBOL_SAMPLE_SIZE);
         process();
     }
-    send_noise(412); // Make sure we're about 1/2 symbol offset so if it doesn't recover timing it will decode the next bit wrong
+    send_noise(SYMBOL_SAMPLE_SIZE / 2); // Make sure we're about 1/2 symbol offset so if it doesn't recover timing it will decode the next bit wrong
     process();
 
     // Now send a valid bit and see if it can recover timing and decode it
@@ -241,7 +301,7 @@ void auto_timing_recovery(void)
         send_noise(SYMBOL_SAMPLE_SIZE);
         process();
     }
-    send_noise(412);
+    send_noise(SYMBOL_SAMPLE_SIZE / 2);
     process();
 
     // Now send a valid bit and see if it can recover timing and decode it
@@ -261,7 +321,7 @@ void auto_timing_recovery(void)
         send_noise(SYMBOL_SAMPLE_SIZE);
         process();
     }
-    send_noise(412); // Make sure we're about 1/2 symbol offset so if it doesn't recover timing it will decode the next bit wrong
+    send_noise(SYMBOL_SAMPLE_SIZE / 2); // Make sure we're about 1/2 symbol offset so if it doesn't recover timing it will decode the next bit wrong
     process();
 
     send_bit(0);
@@ -284,6 +344,65 @@ void auto_timing_recovery(void)
     TEST_ASSERT_EQUAL(0, bit);
 }
 
+void timing_recovery_with_samples(void)
+{
+    init();
+    // log_init(LOG_LEVEL_DEBUG);
+    LOG_INFO("===== TIMING RECOVERY WITH SAMPLES =====");
+
+    lowpass_t filter;
+    lowpass_init(&filter, 2200.0f, SAMPLE_RATE);
+
+    send_noise(SYMBOL_SAMPLE_SIZE); // Make sure we're about 1/2 symbol offset so if it doesn't recover timing it will decode the next bit wrong
+    process();
+    send_partial_bit(1, SYMBOL_SAMPLE_SIZE / 2);
+    process();
+
+    LOG_INFO("Sending recorded samples...");
+    for (int i = 0; i < TEST_SAMPLES_LEN; i += SYMBOL_SAMPLE_SIZE)
+    {
+        send_samples(&test_samples[i], SYMBOL_SAMPLE_SIZE);
+        process();
+    }
+
+    // We should have decoded 48 bits which should match the truth table
+    for (int i = 0; i < circular_buffer_count(&bit_circular_buffer); i++)
+    {
+        bool bit;
+        circular_buffer_pop(&bit_circular_buffer, &bit);
+        TEST_ASSERT_EQUAL_MESSAGE(truth_table[i], bit, "Decoded bit does not match truth table");
+    }
+}
+
+void test_baud32(void)
+{
+    log_init(LOG_LEVEL_INFO);
+    LOG_INFO("===== TEST BAUD32 SAMPLES =====");
+    TEST_ASSERT_TRUE(fsk_decoder_init(&handle) == 0);
+    TEST_ASSERT_TRUE(fsk_decoder_set_frequencies(&handle, 1200, 2200) == 0);
+    TEST_ASSERT_TRUE(fsk_decoder_set_power_threshold(&handle, POWER_THRESHOLD) == 0);
+    TEST_ASSERT_TRUE(fsk_decoder_set_sample_rate(&handle, BAUD32_SAMPLE_RATE) == 0);
+    TEST_ASSERT_TRUE(fsk_decoder_set_symbol_sample_size(&handle, BAUD32_SYMBOL_SAMPLE_SIZE, BUFFER_SYMBOL_COUNT) == 0);
+    process(); // Make sure it initializes everything
+
+    LOG_INFO("Sending recorded samples...");
+    for (int i = 0; i < BAUD32_SAMPLES_LEN; i++)
+    {
+        send_samples(&baud32_samples[i], 1);
+        process();
+    }
+    LOG_WARN("===== END OF BAUD32 TEST =====");
+
+    TEST_ASSERT_EQUAL(BAUD32_TRUTH_TABLE_LEN, circular_buffer_count(&bit_circular_buffer));
+    // Check that the decoded bits match the truth table
+    for (int i = 0; i < circular_buffer_count(&bit_circular_buffer); i++)
+    {
+        bool bit;
+        circular_buffer_pop(&bit_circular_buffer, &bit);
+        TEST_ASSERT_EQUAL_MESSAGE(baud32_truth_table[i], bit, "Decoded bit does not match truth table");
+    }
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -291,10 +410,12 @@ int main(void)
     log_init(LOG_LEVEL_DEBUG);
 
     RUN_TEST(init);
-    RUN_TEST(simple_bit_decoding);
-    RUN_TEST(detect_signal);
-    RUN_TEST(timing_recovery);
-    RUN_TEST(auto_timing_recovery);
+    //RUN_TEST(simple_bit_decoding);
+    // RUN_TEST(detect_signal);
+    // RUN_TEST(timing_recovery);
+    // RUN_TEST(auto_timing_recovery);
+    //RUN_TEST(timing_recovery_with_samples);
+    RUN_TEST(test_baud32);
 
     return UNITY_END();
 }

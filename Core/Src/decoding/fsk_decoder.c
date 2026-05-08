@@ -8,13 +8,68 @@
 #include "utils/goertzel.h"
 #include "c-logger.h"
 #include "utils/circular_buffer.h"
-
-#define QUALITY_THRESHOLD 0.75f
+#include "dsp/filters.h"
 
 static int _process_samples(fsk_decoder_handle_t *handle, decoder_handle_t *ctx);
 static size_t _calculate_window_offset(fsk_decoder_handle_t *handle, decoder_handle_t *ctx);
 static float _calculate_quality(fsk_decoder_handle_t *handle, decoder_handle_t *ctx);
 static int _update_symbol_timing(fsk_decoder_handle_t *handle, decoder_handle_t *ctx);
+static int _process_sample(uint16_t sample, fsk_decoder_handle_t *handle, decoder_handle_t *ctx);
+static int _process_afsk_samples(fsk_decoder_handle_t *handle, decoder_handle_t *ctx);
+
+static env_metric_t env_metric;
+
+static biquad_t bp1200[4] = {
+    {.c = {9.69336931e-08f, 1.93867386e-07f, 9.69336931e-08f,
+           -1.95299489f, 9.65474572e-01f},
+     .x1 = 0,
+     .x2 = 0,
+     .y1 = 0,
+     .y2 = 0},
+    {.c = {1.0f, 2.0f, 1.0f,
+           -1.96000340f, 9.69631439e-01f},
+     .x1 = 0,
+     .x2 = 0,
+     .y1 = 0,
+     .y2 = 0},
+    {.c = {1.0f, -2.0f, 1.0f,
+           -1.96926730f, 9.84359819e-01f},
+     .x1 = 0,
+     .x2 = 0,
+     .y1 = 0,
+     .y2 = 0},
+    {.c = {1.0f, -2.0f, 1.0f,
+           -1.98039793f, 9.88510861e-01f},
+     .x1 = 0,
+     .x2 = 0,
+     .y1 = 0,
+     .y2 = 0}};
+
+static biquad_t bp2200[4] = {
+    {.c = {9.69336931e-08f, 1.93867386e-07f, 9.69336931e-08f,
+           -1.92625778f, 9.66447109e-01f},
+     .x1 = 0,
+     .x2 = 0,
+     .y1 = 0,
+     .y2 = 0},
+    {.c = {1.0f, 2.0f, 1.0f,
+           -1.93366956f, 9.68655698e-01f},
+     .x1 = 0,
+     .x2 = 0,
+     .y1 = 0,
+     .y2 = 0},
+    {.c = {1.0f, -2.0f, 1.0f,
+           -1.94056057f, 9.85315149e-01f},
+     .x1 = 0,
+     .x2 = 0,
+     .y1 = 0,
+     .y2 = 0},
+    {.c = {1.0f, -2.0f, 1.0f,
+           -1.95553640f, 9.87552432e-01f},
+     .x1 = 0,
+     .x2 = 0,
+     .y1 = 0,
+     .y2 = 0}};
 
 /**
  * @brief Initializes the FSK decoder handle with default values.
@@ -35,7 +90,8 @@ int fsk_decoder_init(fsk_decoder_handle_t *handle)
 
     memset(handle, 0, sizeof(*handle));
     handle->configs.buffer_symbol_count = 1; // Default to no oversampling
-    handle->symbol_timing_offset = 0;
+    handle->signal_detected = false;
+    handle->edge_detected = false;
     handle->state = FSK_DECODER_STATE_INITIALIZING;
 
 failed:
@@ -213,26 +269,6 @@ failed:
 }
 
 /**
- * @brief Tells the FSK decoder to do symbol timing recovery.
- *
- * @param handle Pointer to the FSK decoder handle.
- *
- * @return error code: 0 = success, -1 = failure
- */
-int fsk_decoder_reset_symbol_timing(fsk_decoder_handle_t *handle)
-{
-    if (!handle)
-    {
-        LOG_ERROR("FSK decoder handle is NULL");
-        return -1;
-    }
-
-    handle->state = FSK_DECODER_RECOVERING_TIMING;
-    handle->symbol_timing_offset = 0;
-    return 0;
-}
-
-/**
  * @brief Main task function for the FSK decoder. This should be called periodically to process incoming samples and decode bits.
  *
  * @param handle Pointer to the FSK decoder handle.
@@ -258,69 +294,36 @@ int fsk_decoder_task(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
         break;
     case FSK_DECODER_STATE_INITIALIZING:
         handle->state = FSK_DECODER_STATE_IDLE;
+        float gap = 200;
+        // init_bandpass_4th(handle->configs.freq_0 - gap, handle->configs.freq_0 + gap, handle->configs.sample_rate, &bp1200_1, &bp1200_2);
+        // init_bandpass_4th(handle->configs.freq_1 - gap, handle->configs.freq_1 + gap, handle->configs.sample_rate, &bp2200_1, &bp2200_2);
+        env_metric_init(&env_metric, (float)handle->configs.sample_rate, 0.003f);
+        env_metric.alpha = 0.005f;                                                // Smoothing factor for energy metric, adjust as needed
+        handle->half_symbol_sample_size = handle->configs.symbol_sample_size / 2; // Used for timing recovery
+        handle->prev_metric = 0.0f;
+        LOG_INFO("FSK decoder initialized with symbol_sample_size=%zu, buffer_symbol_count=%zu, sample_rate=%d, freq_0=%.1f, freq_1=%.1f, power_threshold=%.2f",
+                 handle->configs.symbol_sample_size,
+                 handle->configs.buffer_symbol_count,
+                 handle->configs.sample_rate,
+                 handle->configs.freq_0,
+                 handle->configs.freq_1,
+                 handle->configs.power_threshold);
         LOG_INFO("FSK decoder initialized");
         break;
     case FSK_DECODER_STATE_IDLE:
         if (!circular_buffer_is_empty(&ctx->input_buffer))
         {
-            handle->state = FSK_DECODER_WAITING_FOR_SIGNAL;
-        }
-        break;
-    case FSK_DECODER_WAITING_FOR_SIGNAL:
-        if (handle->signal_detected)
-        {
-            LOG_DEBUG("Signal already detected, skipping quality check");
-            handle->state = FSK_DECODER_RECOVERING_TIMING;
-            break;
-        }
-
-        if (circular_buffer_count(&ctx->input_buffer) >= (size_t)handle->configs.symbol_sample_size * handle->configs.buffer_symbol_count)
-        {
-            float quality = _calculate_quality(handle, ctx);
-            LOG_DEBUG("Calculated signal quality: %f", quality);
-            if (quality >= QUALITY_THRESHOLD)
-            {
-                LOG_INFO("Signal detected with quality %f, starting timing recovery", quality);
-                handle->signal_detected = true;
-                handle->state = FSK_DECODER_RECOVERING_TIMING;
-            }
-            else
-            {
-                LOG_DEBUG("Signal quality %f is below threshold %f, continuing to wait", quality, QUALITY_THRESHOLD);
-                // Discard some samples to avoid getting stuck on the same low-quality signal
-                for (int i = 0; i < (int)handle->configs.symbol_sample_size; i++)
-                {
-                    circular_buffer_remove(&ctx->input_buffer); // remove 1 item
-                }
-            }
-        }
-        break;
-    case FSK_DECODER_RECOVERING_TIMING:
-        if (circular_buffer_count(&ctx->input_buffer) >= (size_t)handle->configs.symbol_sample_size * handle->configs.buffer_symbol_count)
-        {
-            if (_update_symbol_timing(handle, ctx))
-            {
-                LOG_ERROR("Failed to recover symbol timing");
-                ret = -1;
-                goto failed;
-            }
             handle->state = FSK_DECODER_STATE_DECODING;
         }
         break;
     case FSK_DECODER_STATE_DECODING:
     {
-        size_t required_samples = (size_t)handle->configs.symbol_sample_size;
-
-        LOG_DEBUG("Decoding samples, current sample buffer size: %zu", circular_buffer_count(&ctx->input_buffer));
-        if (circular_buffer_count(&ctx->input_buffer) >= required_samples)
+        if (circular_buffer_count(&ctx->input_buffer) < 1)
         {
-            if (_process_samples(handle, ctx))
-            {
-                LOG_ERROR("Failed to process samples");
-                ret = -1;
-                goto failed;
-            }
+            handle->state = FSK_DECODER_STATE_IDLE;
+            break;
         }
+        _process_afsk_samples(handle, ctx);
         break;
     }
     default:
@@ -344,7 +347,64 @@ bool fsk_decoder_busy(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
     return circular_buffer_count(&ctx->input_buffer) >= (size_t)handle->configs.symbol_sample_size * handle->configs.buffer_symbol_count;
 }
 
-static int _update_symbol_timing(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
+int _process_sample(uint16_t sample, fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
+{
+    // Turn DC 12bit sample into float centered around 0
+    float normalized_sample = ((float)sample - 2048.0f) / 2048.0f;
+
+    float filtered_1200 = process_sos(bp1200, 4, normalized_sample);
+    float filtered_2200 = process_sos(bp2200, 4, normalized_sample);
+
+    float metric = env_metric_process(&env_metric, filtered_1200, filtered_2200);
+    if (metric >= handle->configs.power_threshold && handle->prev_metric < handle->configs.power_threshold)
+    {
+        handle->edge_detected = true;
+        handle->metric_ticker = 0; // Reset timer on rising edge
+    }
+    else if (metric < -handle->configs.power_threshold && handle->prev_metric >= -handle->configs.power_threshold)
+    {
+        handle->edge_detected = true;
+        handle->metric_ticker = 0; // Reset timer on falling edge
+    }
+
+    handle->prev_metric = metric;
+
+    if ((handle->metric_ticker >= handle->half_symbol_sample_size) && (handle->edge_detected || handle->signal_detected))
+    {
+        if (metric >= handle->configs.power_threshold)
+        {
+            LOG_INFO("1");
+            handle->signal_detected = true;
+            if (decoder_process_bit(ctx, true))
+            {
+                LOG_ERROR("Failed to process decoded bit");
+                return -1;
+            }
+        }
+        else if (metric < -handle->configs.power_threshold)
+        {
+            LOG_INFO("0");
+            handle->signal_detected = true;
+            if (decoder_process_bit(ctx, false))
+            {
+                LOG_ERROR("Failed to process decoded bit");
+                return -1;
+            }
+        }
+        else
+        {
+            handle->signal_detected = false;
+        }
+
+        handle->edge_detected = false;
+        handle->metric_ticker = -handle->half_symbol_sample_size; // Set to negative so we wait a full symbol period before measuring again
+    }
+    handle->metric_ticker++;
+
+    return 0;
+}
+
+int _process_afsk_samples(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
 {
     int ret = 0;
 
@@ -354,176 +414,19 @@ static int _update_symbol_timing(fsk_decoder_handle_t *handle, decoder_handle_t 
         return -1;
     }
 
-    if (circular_buffer_count(&ctx->input_buffer) < (size_t)handle->configs.symbol_sample_size * handle->configs.buffer_symbol_count)
+    uint16_t sample;
+    static int count = 0;
+    while (circular_buffer_is_empty(&ctx->input_buffer) == false)
     {
-        LOG_WARN("Not enough samples in circular buffer to update symbol timing");
-        return 0;
-    }
-
-    size_t offset = _calculate_window_offset(handle, ctx);
-    if (offset == (size_t)-1)
-    {
-        LOG_ERROR("Failed to calculate window offset for symbol timing recovery");
-        return -1;
-    }
-
-    handle->symbol_timing_offset = offset;
-    for (int i = 0; i < offset; i++)
-    {
-        circular_buffer_remove(&ctx->input_buffer);
-    }
-    LOG_INFO("Symbol timing offset updated: %zu", offset);
-
-    return 0;
-}
-
-static int _process_samples(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
-{
-    int ret = 0;
-    float power_0 = 0.0f;
-    float power_1 = 0.0f;
-
-    if (goertzel_compute_power_circular_buff(&ctx->input_buffer, handle->configs.symbol_sample_size, handle->configs.freq_0, handle->configs.sample_rate, &power_0) < 0)
-    {
-        LOG_ERROR("Failed to compute power for frequency %f", handle->configs.freq_0);
-        ret = -1;
-        goto failed;
-    }
-
-    if (goertzel_compute_power_circular_buff(&ctx->input_buffer, handle->configs.symbol_sample_size, handle->configs.freq_1, handle->configs.sample_rate, &power_1))
-    {
-        LOG_ERROR("Failed to compute power for frequency %f", handle->configs.freq_1);
-        ret = -1;
-        goto failed;
-    }
-
-    if (power_0 < handle->configs.power_threshold && power_1 < handle->configs.power_threshold)
-    {
-        LOG_DEBUG("No significant signal detected (power_0: %f, power_1: %f)", power_0, power_1);
-        handle->state = FSK_DECODER_WAITING_FOR_SIGNAL;
-        handle->signal_detected = false;
-        goto cleanup;
-    }
-
-    {
-        bool bit = (power_1 > power_0);
-        LOG_DEBUG("Bit: %d", bit);
-
-        if (decoder_process_bit(ctx, bit))
+        if (circular_buffer_pop(&ctx->input_buffer, &sample))
         {
-            LOG_ERROR("Failed to process decoded bit");
+            LOG_ERROR("Failed to pop sample from circular buffer");
             ret = -1;
             goto failed;
         }
-    }
-
-cleanup:
-    // Remove the samples corresponding to one symbol from the input buffer
-    for (int i = 0; i < (int)handle->configs.symbol_sample_size; i++)
-    {
-        circular_buffer_remove(&ctx->input_buffer); // remove 1 item
+        _process_sample(sample, handle, ctx);
     }
 
 failed:
     return ret;
-}
-
-static size_t _calculate_window_offset(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
-{
-    LOG_INFO("Finding optimal window offset for symbol timing recovery");
-    size_t symbol_sample_size = (size_t)handle->configs.symbol_sample_size;
-    size_t max_offset_range = 0;
-    size_t best_offset = 0;
-    float max_power_diff = -1.0f;
-    int jump = handle->configs.symbol_sample_size / 12;
-
-    size_t num_samples = circular_buffer_count(&ctx->input_buffer);
-
-    circular_buffer_t temp_cb = ctx->input_buffer;
-
-    if (symbol_sample_size == 0 || num_samples < symbol_sample_size * handle->configs.buffer_symbol_count)
-    {
-        LOG_ERROR("Not enough samples in circular buffer to calculate window offset (num_samples: %zu, required: %zu)", num_samples, symbol_sample_size * handle->configs.buffer_symbol_count);
-        return -1;
-    }
-
-    if (num_samples == symbol_sample_size)
-    {
-        LOG_WARN("Number of samples equals symbol sample size, no offset calculation needed");
-        return 0;
-    }
-
-    max_offset_range = num_samples - symbol_sample_size + 1;
-    for (size_t offset = 0; offset < num_samples - symbol_sample_size + 1; offset += jump)
-    {
-        float power_0 = 0.0f;
-        float power_1 = 0.0f;
-
-        if (goertzel_compute_power_circular_buff(&temp_cb, symbol_sample_size, handle->configs.freq_0, handle->configs.sample_rate, &power_0))
-        {
-            LOG_ERROR("Not enough samples in circular buffer for offset %zu", offset);
-            break;
-        }
-
-        if (goertzel_compute_power_circular_buff(&temp_cb, symbol_sample_size, handle->configs.freq_1, handle->configs.sample_rate, &power_1))
-        {
-            LOG_ERROR("Not enough samples in circular buffer for offset %zu", offset);
-            break;
-        }
-
-        for (int j = 0; j < (int)jump; j++)
-        {
-            circular_buffer_remove(&temp_cb); // Move the window by one sample for the next offset calculation
-        }
-
-        {
-            float power_diff = fabsf(power_1 - power_0);
-            if (power_diff > max_power_diff)
-            {
-                max_power_diff = power_diff;
-                best_offset = offset;
-            }
-        }
-    }
-
-    LOG_INFO("Best offset found: %d with power difference: %f", best_offset, max_power_diff);
-    return best_offset;
-}
-
-static float _calculate_quality(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
-{
-    float power_0 = 0.0f;
-    float power_1 = 0.0f;
-    float sum_diff = 0.0f;
-    float sum_power = 0.0f;
-
-    circular_buffer_t temp_cb = ctx->input_buffer;
-
-    LOG_DEBUG("Calculating signal quality with %zu buffered symbols", handle->configs.buffer_symbol_count);
-    for (int i = 0; i < (int)handle->configs.buffer_symbol_count; i++)
-    {
-        if (goertzel_compute_power_circular_buff(&temp_cb, handle->configs.symbol_sample_size, handle->configs.freq_0, handle->configs.sample_rate, &power_0))
-        {
-            LOG_WARN("Not enough samples in circular buffer for quality calculation at symbol %d", i);
-            break;
-        }
-
-        if (goertzel_compute_power_circular_buff(&temp_cb, handle->configs.symbol_sample_size, handle->configs.freq_1, handle->configs.sample_rate, &power_1))
-        {
-            LOG_WARN("Not enough samples in circular buffer for quality calculation at symbol %d", i);
-            break;
-        }
-
-        sum_diff += fabsf(power_1 - power_0);
-        sum_power += power_1 + power_0;
-
-        for (int j = 0; j < (int)handle->configs.symbol_sample_size; j++)
-        {
-            circular_buffer_remove(&temp_cb); // Move the window by one symbol for the next calculation
-        }
-    }
-
-    float quality = sum_diff / (sum_power + 1e-6f); // Add small value to avoid division by zero
-    LOG_DEBUG("Signal quality: %f", quality);
-    return quality;
 }
