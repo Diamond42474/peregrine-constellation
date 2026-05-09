@@ -17,60 +17,6 @@ static int _update_symbol_timing(fsk_decoder_handle_t *handle, decoder_handle_t 
 static int _process_sample(uint16_t sample, fsk_decoder_handle_t *handle, decoder_handle_t *ctx);
 static int _process_afsk_samples(fsk_decoder_handle_t *handle, decoder_handle_t *ctx);
 
-static env_metric_t env_metric;
-
-static biquad_t bp1200[4] = {
-    {.c = {9.69336931e-08f, 1.93867386e-07f, 9.69336931e-08f,
-           -1.95299489f, 9.65474572e-01f},
-     .x1 = 0,
-     .x2 = 0,
-     .y1 = 0,
-     .y2 = 0},
-    {.c = {1.0f, 2.0f, 1.0f,
-           -1.96000340f, 9.69631439e-01f},
-     .x1 = 0,
-     .x2 = 0,
-     .y1 = 0,
-     .y2 = 0},
-    {.c = {1.0f, -2.0f, 1.0f,
-           -1.96926730f, 9.84359819e-01f},
-     .x1 = 0,
-     .x2 = 0,
-     .y1 = 0,
-     .y2 = 0},
-    {.c = {1.0f, -2.0f, 1.0f,
-           -1.98039793f, 9.88510861e-01f},
-     .x1 = 0,
-     .x2 = 0,
-     .y1 = 0,
-     .y2 = 0}};
-
-static biquad_t bp2200[4] = {
-    {.c = {9.69336931e-08f, 1.93867386e-07f, 9.69336931e-08f,
-           -1.92625778f, 9.66447109e-01f},
-     .x1 = 0,
-     .x2 = 0,
-     .y1 = 0,
-     .y2 = 0},
-    {.c = {1.0f, 2.0f, 1.0f,
-           -1.93366956f, 9.68655698e-01f},
-     .x1 = 0,
-     .x2 = 0,
-     .y1 = 0,
-     .y2 = 0},
-    {.c = {1.0f, -2.0f, 1.0f,
-           -1.94056057f, 9.85315149e-01f},
-     .x1 = 0,
-     .x2 = 0,
-     .y1 = 0,
-     .y2 = 0},
-    {.c = {1.0f, -2.0f, 1.0f,
-           -1.95553640f, 9.87552432e-01f},
-     .x1 = 0,
-     .x2 = 0,
-     .y1 = 0,
-     .y2 = 0}};
-
 /**
  * @brief Initializes the FSK decoder handle with default values.
  *
@@ -294,12 +240,11 @@ int fsk_decoder_task(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
         break;
     case FSK_DECODER_STATE_INITIALIZING:
         handle->state = FSK_DECODER_STATE_IDLE;
-        float gap = 200;
-        // init_bandpass_4th(handle->configs.freq_0 - gap, handle->configs.freq_0 + gap, handle->configs.sample_rate, &bp1200_1, &bp1200_2);
-        // init_bandpass_4th(handle->configs.freq_1 - gap, handle->configs.freq_1 + gap, handle->configs.sample_rate, &bp2200_1, &bp2200_2);
-        env_metric_init(&env_metric, (float)handle->configs.sample_rate, 0.003f);
-        env_metric.alpha = 0.005f;                                                // Smoothing factor for energy metric, adjust as needed
-        handle->half_symbol_sample_size = handle->configs.symbol_sample_size / 2; // Used for timing recovery
+        float gap = 100;
+        init_bandpass_4th(handle->configs.freq_0 - gap, handle->configs.freq_0 + gap, handle->configs.sample_rate, &handle->bp1200_1, &handle->bp1200_2);
+        init_bandpass_4th(handle->configs.freq_1 - gap, handle->configs.freq_1 + gap, handle->configs.sample_rate, &handle->bp2200_1, &handle->bp2200_2);
+        env_metric_init(&handle->env_metric, (float)handle->configs.sample_rate, 0.002f);
+        handle->half_symbol_sample_size = handle->configs.symbol_sample_size / 2;
         handle->prev_metric = 0.0f;
         LOG_INFO("FSK decoder initialized with symbol_sample_size=%d, buffer_symbol_count=%d, \nsample_rate=%d, freq_0=%.1f, freq_1=%.1f, power_threshold=%.2f",
                  handle->configs.symbol_sample_size,
@@ -352,10 +297,12 @@ int _process_sample(uint16_t sample, fsk_decoder_handle_t *handle, decoder_handl
     // Turn DC 12bit sample into float centered around 0
     float normalized_sample = ((float)sample - 2048.0f) / 2048.0f;
 
-    float filtered_1200 = process_sos(bp1200, 4, normalized_sample);
-    float filtered_2200 = process_sos(bp2200, 4, normalized_sample);
+    float filtered_1200_1 = biquad_process(&handle->bp1200_1, normalized_sample);
+    float filtered_1200 = biquad_process(&handle->bp1200_2, filtered_1200_1);
+    float filtered_2200_1 = biquad_process(&handle->bp2200_1, normalized_sample);
+    float filtered_2200 = biquad_process(&handle->bp2200_2, filtered_2200_1);
 
-    float metric = env_metric_process(&env_metric, filtered_1200, filtered_2200);
+    float metric = env_metric_process(&handle->env_metric, filtered_1200, filtered_2200);
     if (metric >= handle->configs.power_threshold && handle->prev_metric < handle->configs.power_threshold)
     {
         LOG_DEBUG("Rising edge detected: metric = %f", metric);

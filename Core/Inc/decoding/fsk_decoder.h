@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include "utils/circular_buffer.h"
 #include "decoding/decoder.h"
+#include "dsp/filters.h"
 
 typedef struct fsk_decoder_handle
 {
@@ -24,6 +25,9 @@ typedef struct fsk_decoder_handle
     int half_symbol_sample_size;
     int metric_ticker;
     float prev_metric;
+    env_metric_t env_metric;
+    biquad_t bp1200_1, bp1200_2;
+    biquad_t bp2200_1, bp2200_2;
 
     enum
     {

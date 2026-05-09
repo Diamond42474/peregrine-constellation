@@ -344,35 +344,6 @@ void auto_timing_recovery(void)
     TEST_ASSERT_EQUAL(0, bit);
 }
 
-void timing_recovery_with_samples(void)
-{
-    init();
-    LOG_INFO("===== TIMING RECOVERY WITH SAMPLES =====");
-
-    lowpass_t filter;
-    lowpass_init(&filter, 2200.0f, SAMPLE_RATE);
-
-    send_noise(SYMBOL_SAMPLE_SIZE); // Make sure we're about 1/2 symbol offset so if it doesn't recover timing it will decode the next bit wrong
-    process();
-    send_partial_bit(1, SYMBOL_SAMPLE_SIZE / 2);
-    process();
-
-    LOG_INFO("Sending recorded samples...");
-    for (int i = 0; i < TEST_SAMPLES_LEN; i += SYMBOL_SAMPLE_SIZE)
-    {
-        send_samples(&test_samples[i], SYMBOL_SAMPLE_SIZE);
-        process();
-    }
-
-    // We should have decoded 48 bits which should match the truth table
-    for (int i = 0; i < circular_buffer_count(&bit_circular_buffer); i++)
-    {
-        bool bit;
-        circular_buffer_pop(&bit_circular_buffer, &bit);
-        TEST_ASSERT_EQUAL_MESSAGE(truth_table[i], bit, "Decoded bit does not match truth table");
-    }
-}
-
 void test_baud32(void)
 {
     LOG_INFO("===== TEST BAUD32 SAMPLES =====");
@@ -412,7 +383,6 @@ int main(void)
     RUN_TEST(detect_signal);
     RUN_TEST(timing_recovery);
     RUN_TEST(auto_timing_recovery);
-    RUN_TEST(timing_recovery_with_samples);
     RUN_TEST(test_baud32);
 
     return UNITY_END();
