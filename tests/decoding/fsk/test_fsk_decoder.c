@@ -347,7 +347,6 @@ void auto_timing_recovery(void)
 void timing_recovery_with_samples(void)
 {
     init();
-    // log_init(LOG_LEVEL_DEBUG);
     LOG_INFO("===== TIMING RECOVERY WITH SAMPLES =====");
 
     lowpass_t filter;
@@ -376,7 +375,6 @@ void timing_recovery_with_samples(void)
 
 void test_baud32(void)
 {
-    log_init(LOG_LEVEL_INFO);
     LOG_INFO("===== TEST BAUD32 SAMPLES =====");
     TEST_ASSERT_TRUE(fsk_decoder_init(&handle) == 0);
     TEST_ASSERT_TRUE(fsk_decoder_set_frequencies(&handle, 1200, 2200) == 0);
