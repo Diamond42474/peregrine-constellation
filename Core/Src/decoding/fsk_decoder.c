@@ -301,7 +301,7 @@ int fsk_decoder_task(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
         env_metric.alpha = 0.005f;                                                // Smoothing factor for energy metric, adjust as needed
         handle->half_symbol_sample_size = handle->configs.symbol_sample_size / 2; // Used for timing recovery
         handle->prev_metric = 0.0f;
-        LOG_INFO("FSK decoder initialized with symbol_sample_size=%zu, buffer_symbol_count=%zu, sample_rate=%d, freq_0=%.1f, freq_1=%.1f, power_threshold=%.2f",
+        LOG_INFO("FSK decoder initialized with symbol_sample_size=%d, buffer_symbol_count=%d, \nsample_rate=%d, freq_0=%.1f, freq_1=%.1f, power_threshold=%.2f",
                  handle->configs.symbol_sample_size,
                  handle->configs.buffer_symbol_count,
                  handle->configs.sample_rate,
@@ -358,11 +358,13 @@ int _process_sample(uint16_t sample, fsk_decoder_handle_t *handle, decoder_handl
     float metric = env_metric_process(&env_metric, filtered_1200, filtered_2200);
     if (metric >= handle->configs.power_threshold && handle->prev_metric < handle->configs.power_threshold)
     {
+        LOG_DEBUG("Rising edge detected: metric = %f", metric);
         handle->edge_detected = true;
         handle->metric_ticker = 0; // Reset timer on rising edge
     }
     else if (metric < -handle->configs.power_threshold && handle->prev_metric >= -handle->configs.power_threshold)
     {
+        LOG_DEBUG("Falling edge detected: metric = %f", metric);
         handle->edge_detected = true;
         handle->metric_ticker = 0; // Reset timer on falling edge
     }
@@ -373,7 +375,7 @@ int _process_sample(uint16_t sample, fsk_decoder_handle_t *handle, decoder_handl
     {
         if (metric >= handle->configs.power_threshold)
         {
-            LOG_INFO("1");
+            LOG_DEBUG("1");
             handle->signal_detected = true;
             if (decoder_process_bit(ctx, true))
             {
@@ -383,7 +385,7 @@ int _process_sample(uint16_t sample, fsk_decoder_handle_t *handle, decoder_handl
         }
         else if (metric < -handle->configs.power_threshold)
         {
-            LOG_INFO("0");
+            LOG_DEBUG("0");
             handle->signal_detected = true;
             if (decoder_process_bit(ctx, false))
             {
