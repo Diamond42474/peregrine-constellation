@@ -12,6 +12,7 @@ set(MOCK_SOURCES
 
 set(UNIT_SOURCES
     ${PROJECT_SOURCE_DIR}/Core/Src/decoding/fsk_decoder.c
+    ${PROJECT_SOURCE_DIR}/Core/Src/dsp/filters.c
     
     ${PROJECT_SOURCE_DIR}/Core/Src/utils/circular_buffer.c
     ${PROJECT_SOURCE_DIR}/Core/Src/utils/goertzel.c
@@ -38,6 +39,7 @@ target_link_libraries(${TEST_NAME}
 target_include_directories(${TEST_NAME}
     PRIVATE
         ${PROJECT_SOURCE_DIR}/Core/Inc
+        ${PROJECT_SOURCE_DIR}/tests/samples
 )
 
 # Unity (assumes Unity is already added somewhere higher-level)
@@ -50,6 +52,7 @@ target_link_libraries(${TEST_NAME}
 # Optional but recommended compile flags
 target_compile_options(${TEST_NAME}
     PRIVATE
+        -Ofast
         # -Wall
         # -Wextra
 )

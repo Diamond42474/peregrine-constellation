@@ -6,29 +6,34 @@
 #include <stdbool.h>
 #include "utils/circular_buffer.h"
 #include "decoding/decoder.h"
+#include "dsp/filters.h"
 
 typedef struct fsk_decoder_handle
 {
     struct
     {
-        size_t symbol_sample_size;  // Size of the ADC sample buffer
+        int symbol_sample_size;  // Size of the ADC sample buffer
         int sample_rate;            // Sample rate of the ADC
-        size_t buffer_symbol_count; // Number of symbols to buffer for processing
+        int buffer_symbol_count; // Number of symbols to buffer for processing
         float power_threshold;      // Power threshold for detecting bits
         float freq_0;               // Frequency representing bit 0
         float freq_1;               // Frequency representing bit 1
     } configs;
 
-    size_t symbol_timing_offset;
     bool signal_detected;
+    bool edge_detected;
+    int half_symbol_sample_size;
+    int metric_ticker;
+    float prev_metric;
+    env_metric_t env_metric;
+    biquad_t bp1200_1, bp1200_2;
+    biquad_t bp2200_1, bp2200_2;
 
     enum
     {
         FSK_DECODER_STATE_UNINITIALIZED,
         FSK_DECODER_STATE_INITIALIZING,
         FSK_DECODER_STATE_IDLE,
-        FSK_DECODER_WAITING_FOR_SIGNAL, ///< Waiting for signal to exceed quality threshold
-        FSK_DECODER_RECOVERING_TIMING,  ///< Attempting to recover symbol timing
         FSK_DECODER_STATE_DECODING,     ///< Actively decoding samples
     } state;
 } fsk_decoder_handle_t;
