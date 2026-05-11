@@ -1,4 +1,4 @@
-##  (2026-04-15)
+##  (2026-05-11)
 
 
 ### Features
@@ -7,8 +7,10 @@
 * Added auto-timing recovery ([92e4567](https://github.com/Diamond42474/peregrine-constellation/commit/92e4567c47341504ac8cbd07d8dd4f4b67bb62c3))
 * Added set head function for circular buffer for use with DMA operations ([f52a219](https://github.com/Diamond42474/peregrine-constellation/commit/f52a2193ded662bc95c007145fd72e8dfd61be71))
 * Added Unity testing framework ([fd0f4ef](https://github.com/Diamond42474/peregrine-constellation/commit/fd0f4ef00d3bedb649eea5b460e3694e8d9a5322))
+* AFSK using bandpass filtering, envelope detection, and PLL for constant timing recovery ([730da32](https://github.com/Diamond42474/peregrine-constellation/commit/730da3233faf592f910f8ff07fb42f461abf8432))
 * built out cobs decoder pipeline and integrated it into decoder pipeline manager ([595ef48](https://github.com/Diamond42474/peregrine-constellation/commit/595ef485ccc787c018f1ed9d273846b84c5a52fd))
 * Encoder Pipeline ([cc19e52](https://github.com/Diamond42474/peregrine-constellation/commit/cc19e52ebcaed1f9cfe12796f1faf3b211602dd0))
+* Made biquad filtering dynamic to sample rate ([a74681e](https://github.com/Diamond42474/peregrine-constellation/commit/a74681e928aa595086d39dfa848ef34f472c809e))
 * Pipeline for managing frame encoding ([883af6d](https://github.com/Diamond42474/peregrine-constellation/commit/883af6df9f1de4dfc9251751c8d8056eb13c5a0e))
 
 
@@ -24,5 +26,6 @@
 
 * Added state-based flags for grabbing when the decoder is busy or not ([30c9bcc](https://github.com/Diamond42474/peregrine-constellation/commit/30c9bcc2da0f6f1f22c2384aa32c8321b47a0cb8))
 * Decoder now uses single input and output buffer that's shared between sub-modules ([df63923](https://github.com/Diamond42474/peregrine-constellation/commit/df639237c8097ec9aceca616e93f625bf0fa6950))
+* Faster FSK window offset calculation ([cc67878](https://github.com/Diamond42474/peregrine-constellation/commit/cc6787837b8de2af79ffbd67a8923a0438bd0316))
 * simplified fsk timing calculator ([9759f0c](https://github.com/Diamond42474/peregrine-constellation/commit/9759f0ca30091dcae83014938cc93e22219ec267))
 
