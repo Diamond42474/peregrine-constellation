@@ -12,20 +12,10 @@ typedef enum {
 } pc_error_t;
 
 
-// Peregrine Constellation handle
-typedef struct {
-    uint8_t node_address;
-
-    // broadcasting settings
-    uint8_t retry_count;
-    uint8_t max_transmit_retries;
-    uint32_t backoff_base_time_ms;
-    uint32_t backoff_max_time_ms;
-    uint32_t last_retry_time_ms;
-}pc_handle_t;
+typedef struct pc_handle pc_handle_t;
 
 // Initialize the library with the node address
-pc_error_t pc_init(pc_handle_t *handle);
+pc_handle_t *pc_init(void);
 pc_error_t pc_config_node_address(pc_handle_t *handle, uint8_t node_address);
 
 // Send a message
