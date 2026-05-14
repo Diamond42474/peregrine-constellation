@@ -4,8 +4,33 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
+#include "interface/pconfig.h"
 
-#include "pconfig.h"
+#define PACKET_SIZE                            \
+    (                                          \
+        sizeof(uint8_t) + /* src_addr */       \
+        sizeof(uint8_t) + /* dest_addr */      \
+        sizeof(uint8_t) + /* id */             \
+        sizeof(uint8_t) + /* ttl/type byte */  \
+        sizeof(uint8_t) + /* payload_length */ \
+        sizeof(uint16_t) /* crc */ +           \
+        pconfigMAX_PAYLOAD_SIZE)
+
+#define PACKET_HEADER_SIZE                     \
+    (                                          \
+        sizeof(uint8_t) + /* src_addr */       \
+        sizeof(uint8_t) + /* dest_addr */      \
+        sizeof(uint8_t) + /* id */             \
+        sizeof(uint8_t) + /* ttl/type byte */  \
+        sizeof(uint8_t) + /* payload_length */ \
+        sizeof(uint16_t)  /* crc */            \
+    )
+
+typedef enum
+{
+    PACKET_TYPE_DATA = 0,
+    PACKET_TYPE_ACK = 1,
+} packet_type_e;
 
 typedef struct
 {
@@ -14,7 +39,7 @@ typedef struct
      */
     struct
     {
-        
+
     } metadata;
 
     /**
@@ -22,24 +47,18 @@ typedef struct
      */
     struct
     {
-        uint8_t packet_type;
-        uint16_t src_addr;
-        uint16_t dest_addr;
-        uint16_t seq_num;
-        uint16_t payload_length;
-        uint8_t hop_count;
-        uint8_t max_hops;
-        uint16_t header_crc;
+        uint8_t src_addr;
+        uint8_t dest_addr;
+        uint8_t id;
+        uint8_t ttl : 4;
+        uint8_t type : 4;
+        uint8_t payload_length;
+        uint16_t crc;
         uint8_t payload[pconfigMAX_PAYLOAD_SIZE];
-        uint16_t payload_crc;
     } content;
 } packet_t;
 
-uint16_t calculate_payload_crc(const packet_t *packet);
-uint16_t calculate_header_crc(const packet_t *packet);
-uint16_t calculate_size(const packet_t *packet);
-uint16_t calculate_min_size();
-size_t packet_get_header_size();
-void initialize_packet(packet_t *packet, uint8_t packet_type, uint16_t src_addr, uint16_t dest_addr, uint16_t seq_num, uint8_t max_hops, const uint8_t *payload, size_t payload_length);
+uint16_t calculate_crc(const packet_t *packet);
+int initialize_packet(packet_t *packet, packet_type_e packet_type, uint16_t src_addr, uint16_t dest_addr, uint8_t id, const uint8_t *payload, size_t payload_length);
 void print_packet(const packet_t *packet);
 #endif // PACKET_H

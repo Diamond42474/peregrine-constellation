@@ -2,10 +2,7 @@
 
 #include "c-logger.h"
 #include "utils/bit_unpacker.h"
-#include "encoding/cobs_encoder.h"
-
-#define COBS_MAX_PAYLOAD_SIZE (254) // Maximum payload size for COBS (code_byte + data + delimiter_byte)
-#define PREAMBLE_WORD (0xABBA)
+#include "interface/pconfig.h"
 
 static int _process(encoder_handle_t *handle);
 static int _cobs(encoder_handle_t *handle);
@@ -22,8 +19,9 @@ int encoder_init(encoder_handle_t *handle)
 
     bit_unpacker_init(&handle->bit_unpacker);
 
-    handle->preamble_word = PREAMBLE_WORD; // Default for now
-    handle->preamble_length = 1;
+    handle->preamble[0] = pconfigPREAMBLE_BYTE_1;
+    handle->preamble[1] = pconfigPREAMBLE_BYTE_2;
+    handle->preamble_length = 2;
 
     handle->state = ENCODER_UNINITIALIZED;
 
@@ -269,7 +267,11 @@ static int _process(encoder_handle_t *handle)
 {
     int ret = 0;
 
-    // circular_buffer_push(&handle->output_cb, &handle->preamble_word); // Place preamble byte
+    // First push preamble
+    for (int i = 0; i < handle->preamble_length; i++)
+    {
+        circular_buffer_push(&handle->output_cb, &handle->preamble[i]); // Place preamble byte
+    }
 
     switch (handle->type)
     {
@@ -291,37 +293,10 @@ static int _process(encoder_handle_t *handle)
         }
         handle->state = ENCODER_IDLE; // We can idle after this because we processed all available data
         break;
-    case ENCODER_TYPE_COBS:
-        ret = _cobs(handle);
-        break;
     default:
         LOG_ERROR("Unknown encoder type");
         return -1;
     }
 
     return ret;
-}
-
-static int _cobs(encoder_handle_t *handle)
-{
-    int ret = 0;
-
-    // Make sure we only digest a maximum of COBS_MAX_PAYLOAD_SIZE bytes
-    size_t size = circular_buffer_count(&handle->input_cb);
-    if (size > COBS_MAX_PAYLOAD_SIZE)
-    {
-        size = COBS_MAX_PAYLOAD_SIZE;
-    }
-    else
-    {
-        handle->state = ENCODER_IDLE; // We can idle after this because we processed all available data
-    }
-
-    if (cobs_encode_cb(&handle->input_cb, size, &handle->output_cb))
-    {
-        LOG_ERROR("COBS encoding failed");
-        return -1;
-    }
-
-    return 0;
 }

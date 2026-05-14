@@ -63,33 +63,32 @@ int packet_decoder_process_byte(packet_decoder_t *handle, unsigned char byte)
         break;
     case PACKET_DECODER_STATE_WAITING_FOR_HEADER:
 
-        // Check if we have header (13 bytes)
-        if (handle->packet_buffer_index == packet_get_header_size())
+        // Check if we have header
+        if (handle->packet_buffer_index >= PACKET_HEADER_SIZE)
         {
             // Extract header fields
             _process_header(handle);
 
-            // Validate header CRC
-            uint16_t header_crc = calculate_header_crc(&handle->current_packet);
-            if (header_crc != handle->current_packet.content.header_crc)
+            if (handle->current_packet.content.payload_length > pconfigMAX_PAYLOAD_SIZE)
             {
-                LOG_WARN("Header CRC mismatch, resetting packet decoder");
+                LOG_ERROR("Invalid payload length: %d", handle->current_packet.content.payload_length);
                 packet_decoder_reset(handle);
                 handle->state = PACKET_DECODER_STATE_WAITING_FOR_PREAMBLE;
-                return 0;
+                return -1;
             }
+
             LOG_INFO("Header received and validated, waiting for payload");
             handle->state = PACKET_DECODER_STATE_WAITING_FOR_PAYLOAD;
         }
         break;
     case PACKET_DECODER_STATE_WAITING_FOR_PAYLOAD:
         // Check if we have received the full payload
-        if (handle->packet_buffer_index >= packet_get_header_size() + handle->current_packet.content.payload_length)
+        if (handle->packet_buffer_index >= PACKET_HEADER_SIZE + handle->current_packet.content.payload_length)
         {
             // Copy payload data
             for (size_t i = 0; i < handle->current_packet.content.payload_length; i++)
             {
-                handle->current_packet.content.payload[i] = handle->packet_buffer[packet_get_header_size() + i];
+                handle->current_packet.content.payload[i] = handle->packet_buffer[PACKET_HEADER_SIZE + i];
             }
 
             // Packet fully received
@@ -130,12 +129,11 @@ static void _process_header(packet_decoder_t *handle)
     }
 
     // Parse header fields from packet_buffer
-    handle->current_packet.content.packet_type = handle->packet_buffer[0];
-    handle->current_packet.content.src_addr = (handle->packet_buffer[1] << 8) | handle->packet_buffer[2];
-    handle->current_packet.content.dest_addr = (handle->packet_buffer[3] << 8) | handle->packet_buffer[4];
-    handle->current_packet.content.seq_num = (handle->packet_buffer[5] << 8) | handle->packet_buffer[6];
-    handle->current_packet.content.payload_length = (handle->packet_buffer[7] << 8) | handle->packet_buffer[8];
-    handle->current_packet.content.hop_count = handle->packet_buffer[9];
-    handle->current_packet.content.max_hops = handle->packet_buffer[10];
-    handle->current_packet.content.header_crc = (handle->packet_buffer[11] << 8) | handle->packet_buffer[12];
+    handle->current_packet.content.src_addr = handle->packet_buffer[0];
+    handle->current_packet.content.dest_addr = handle->packet_buffer[1];
+    handle->current_packet.content.id = handle->packet_buffer[2];
+    handle->current_packet.content.ttl = handle->packet_buffer[3] >> 4;
+    handle->current_packet.content.type = handle->packet_buffer[3] & 0x0F;
+    handle->current_packet.content.payload_length = handle->packet_buffer[4];
+    handle->current_packet.content.crc = (handle->packet_buffer[5] << 8) | handle->packet_buffer[6];
 }

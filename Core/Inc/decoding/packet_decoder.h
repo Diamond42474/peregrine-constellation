@@ -1,15 +1,14 @@
 #ifndef PACKET_DECODER_H
 #define PACKET_DECODER_H
 
-#include "../pconfig.h"
 #include "../packet.h"
 
 typedef struct
 {
-    void *ctx;                                               ///< Pointer to the decoder context
-    unsigned char packet_buffer[pconfigMAX_PACKET_SIZE + 1]; ///< Buffer to hold incoming packet data
-    size_t packet_buffer_index;                              ///< Current index in the packet buffer
-    packet_t current_packet;                                 ///< Current packet being processed
+    void *ctx;                                       ///< Pointer to the decoder context
+    uint8_t packet_buffer[sizeof(((packet_t *)NULL)->content)]; ///< Buffer to hold incoming packet data
+    size_t packet_buffer_index;                      ///< Current index in the packet buffer
+    packet_t current_packet;                         ///< Current packet being processed
 
     enum
     {
