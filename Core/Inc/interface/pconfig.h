@@ -24,5 +24,6 @@
 
 // Modem
 #define pconfigMODEM_TX_BUFFER_SIZE (pconfigMAX_PAYLOAD_SIZE * 2) // Buffer for outgoing data to be transmitted, should be multiple of max payload size
+#define pconfigPTT_DELAY_MS (100)                                 // Delay between setting PTT high and starting transmission to allow hardware to stabilize
 
 #endif // pconfig_H
