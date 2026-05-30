@@ -6,16 +6,6 @@
 #include <stddef.h>
 #include "interface/pconfig.h"
 
-#define PACKET_SIZE                            \
-    (                                          \
-        sizeof(uint8_t) + /* src_addr */       \
-        sizeof(uint8_t) + /* dest_addr */      \
-        sizeof(uint8_t) + /* id */             \
-        sizeof(uint8_t) + /* ttl/type byte */  \
-        sizeof(uint8_t) + /* payload_length */ \
-        sizeof(uint16_t) /* crc */ +           \
-        pconfigMAX_PAYLOAD_SIZE)
-
 #define PACKET_HEADER_SIZE                     \
     (                                          \
         sizeof(uint8_t) + /* src_addr */       \
@@ -25,6 +15,11 @@
         sizeof(uint8_t) + /* payload_length */ \
         sizeof(uint16_t)  /* crc */            \
     )
+
+#define PACKET_SIZE          \
+    (                        \
+        PACKET_HEADER_SIZE + \
+        pconfigMAX_PAYLOAD_SIZE)
 
 typedef enum
 {

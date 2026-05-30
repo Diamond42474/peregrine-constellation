@@ -28,10 +28,11 @@ typedef struct
     void *byte_decoder_handle;
     packet_decoder_t packet_decoder;
 
-    circular_buffer_t input_buffer;
-    size_t input_buffer_size;
-    circular_buffer_t output_buffer;
-    size_t output_buffer_size;
+    circular_buffer_t input_buffer; ///< Buffer for incoming ADC samples or bits, depending on the bit decoder
+    size_t input_buffer_size;       ///< Size of the input buffer in number of elements (e.g., number of samples or bits)
+
+    circular_buffer_t output_buffer; ///< Buffer for decoded packets ready to be consumed by the application
+    size_t output_buffer_size;       ///< Number of packets that can be stored in the output buffer
 
     enum
     {

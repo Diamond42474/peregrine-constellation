@@ -10,8 +10,9 @@ add_library(peregrine-constellation-impl STATIC
 
     ${CMAKE_CURRENT_LIST_DIR}/Src/dsp/filters.c
     
-    ${CMAKE_CURRENT_LIST_DIR}/Src/encoding/encoder.c
+    ${CMAKE_CURRENT_LIST_DIR}/Src/encoding/packet_serializer.c
 
+    ${CMAKE_CURRENT_LIST_DIR}/Src/utils/time_utils.c
     ${CMAKE_CURRENT_LIST_DIR}/Src/utils/goertzel.c
     ${CMAKE_CURRENT_LIST_DIR}/Src/utils/circular_buffer.c
     ${CMAKE_CURRENT_LIST_DIR}/Src/utils/fsk_utils.c

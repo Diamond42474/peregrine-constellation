@@ -14,7 +14,7 @@ int packet_decoder_init(packet_decoder_t *handle, void *ctx)
     }
 
     handle->ctx = ctx;
-    handle->state = PACKET_DECODER_STATE_WAITING_FOR_PREAMBLE;
+    handle->state = PACKET_DECODER_STATE_WAITING_FOR_HEADER;
 
     return 0;
 }
@@ -46,21 +46,6 @@ int packet_decoder_process_byte(packet_decoder_t *handle, unsigned char byte)
 
     switch (handle->state)
     {
-    case PACKET_DECODER_STATE_WAITING_FOR_PREAMBLE:
-        // Reset if preamble detected
-        // TODO: Implement preamble fetch from ctx
-        if (handle->packet_buffer_index >= 2)
-        {
-            // Check for preamble pattern (0xAA, 0xAA)
-            if (handle->packet_buffer[handle->packet_buffer_index - 2] == 0xAB &&
-                handle->packet_buffer[handle->packet_buffer_index - 1] == 0xBA)
-            {
-                LOG_INFO("Preamble detected");
-                handle->state = PACKET_DECODER_STATE_WAITING_FOR_HEADER;
-            }
-            packet_decoder_reset(handle);
-        }
-        break;
     case PACKET_DECODER_STATE_WAITING_FOR_HEADER:
 
         // Check if we have header
@@ -73,7 +58,7 @@ int packet_decoder_process_byte(packet_decoder_t *handle, unsigned char byte)
             {
                 LOG_ERROR("Invalid payload length: %d", handle->current_packet.content.payload_length);
                 packet_decoder_reset(handle);
-                handle->state = PACKET_DECODER_STATE_WAITING_FOR_PREAMBLE;
+                handle->state = PACKET_DECODER_STATE_WAITING_FOR_HEADER;
                 return -1;
             }
 
@@ -95,12 +80,12 @@ int packet_decoder_process_byte(packet_decoder_t *handle, unsigned char byte)
             LOG_INFO("Full packet received");
             decoder_process_packet(handle->ctx, &handle->current_packet);
             packet_decoder_reset(handle);
-            handle->state = PACKET_DECODER_STATE_WAITING_FOR_PREAMBLE;
+            handle->state = PACKET_DECODER_STATE_WAITING_FOR_HEADER;
         }
         break;
     default:
         LOG_ERROR("Invalid packet decoder state");
-        handle->state = PACKET_DECODER_STATE_WAITING_FOR_PREAMBLE;
+        handle->state = PACKET_DECODER_STATE_WAITING_FOR_HEADER;
         return -1;
     }
 
