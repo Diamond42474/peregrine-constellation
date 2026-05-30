@@ -7,8 +7,9 @@
 
 static int _init_decoder(modem_handle_t *handle);
 static int _handle_tx(modem_handle_t *handle);
+static int _handle_rx(modem_handle_t *handle);
 
-int modem_init(modem_handle_t *handle)
+int modem_init(modem_handle_t *handle, orchestrator_handle_t *orchestrator_ctx)
 {
     int ret = 0;
 
@@ -19,6 +20,8 @@ int modem_init(modem_handle_t *handle)
     }
 
     memset(handle, 0, sizeof(modem_handle_t));
+
+    handle->orchestrator_ctx = orchestrator_ctx; // Callback for sending packets to orchestrator when decoded
 
     if (_init_decoder(handle))
     {
@@ -163,6 +166,11 @@ int modem_task(modem_handle_t *handle)
         LOG_ERROR("Failed to handle TX");
         return -1;
     }
+    if (_handle_rx(handle))
+    {
+        LOG_ERROR("Failed to handle RX");
+        return -1;
+    }
 }
 
 // =-=-=-=-=-=-=-=-=-=
@@ -281,4 +289,44 @@ int _handle_tx(modem_handle_t *handle)
     {
         dac_bsp_set_tone(pconfigMODEM_FREQ_0);
     }
+}
+
+int _handle_rx(modem_handle_t *handle)
+{
+    int ret = 0;
+
+    if (!handle)
+    {
+        LOG_ERROR("Handle is NULL");
+        return -1;
+    }
+
+    if (adc_bsp_data_available())
+    {
+        // Get samples from ADC and push to decoder input buffer
+        if (adc_bsp_get_data(&handle->decoder.input_buffer))
+        {
+            LOG_ERROR("Failed to get ADC data");
+            return -1;
+        }
+    }
+
+    if (decoder_has_packet(&handle->decoder))
+    {
+        packet_t packet;
+        if (decoder_get_packet(&handle->decoder, &packet))
+        {
+            LOG_ERROR("Failed to get decoded packet");
+            return -1;
+        }
+
+        // Send packet to orchestrator for processing
+        if (orchestrator_packet_callback(handle->orchestrator_ctx, &packet))
+        {
+            LOG_ERROR("Failed to send packet to orchestrator");
+            return -1;
+        }
+    }
+
+    return ret;
 }

@@ -8,9 +8,13 @@
 #include "utils/circular_buffer.h"
 #include "utils/time_utils.h"
 #include "utils/bit_unpacker.h"
+#include "orchestrator.h"
 
 typedef struct
 {
+    // Orchestrator ctx
+    orchestrator_handle_t *orchestrator_ctx;
+
     // Decoder components
     decoder_handle_t decoder;
     fsk_decoder_handle_t fsk_decoder;
@@ -25,7 +29,7 @@ typedef struct
     bit_unpacker_t bit_unpacker; ///< Bit unpacker for converting byte stream to bits for transmission
 } modem_handle_t;
 
-int modem_init(modem_handle_t *handle);
+int modem_init(modem_handle_t *handle, orchestrator_handle_t *orchestrator_ctx);
 
 int modem_send(modem_handle_t *handle, circular_buffer_t *cb);
 bool modem_rx_busy(modem_handle_t *handle); // actively receiving

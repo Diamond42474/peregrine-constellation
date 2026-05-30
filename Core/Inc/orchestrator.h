@@ -26,4 +26,6 @@ int orchestrator_read(orchestrator_handle_t *handle, uint8_t *data, size_t len);
 
 int orchestrator_task(orchestrator_handle_t *handle);
 
+int orchestrator_packet_callback(orchestrator_handle_t *handle, const packet_t *packet);
+
 #endif // ORCHESTRATOR_H
