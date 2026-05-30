@@ -1,17 +1,20 @@
-##  (2026-05-11)
+##  (2026-05-30)
 
 
 ### Features
 
 * Added AI generated workflow ([9d29f0a](https://github.com/Diamond42474/peregrine-constellation/commit/9d29f0aa2b12fc458709e75bc07a2ec3bbeb7349))
 * Added auto-timing recovery ([92e4567](https://github.com/Diamond42474/peregrine-constellation/commit/92e4567c47341504ac8cbd07d8dd4f4b67bb62c3))
+* Added BSP interfaces for audio in/out and PTT control ([f81b4f7](https://github.com/Diamond42474/peregrine-constellation/commit/f81b4f765dde4256a31dc57a4e8ef6fda0ba5c70))
 * Added set head function for circular buffer for use with DMA operations ([f52a219](https://github.com/Diamond42474/peregrine-constellation/commit/f52a2193ded662bc95c007145fd72e8dfd61be71))
+* Added time abstration and utilities ([7e35cbf](https://github.com/Diamond42474/peregrine-constellation/commit/7e35cbffe0bc601a3ac97c427b20d4797e14491f))
 * Added Unity testing framework ([fd0f4ef](https://github.com/Diamond42474/peregrine-constellation/commit/fd0f4ef00d3bedb649eea5b460e3694e8d9a5322))
 * AFSK using bandpass filtering, envelope detection, and PLL for constant timing recovery ([730da32](https://github.com/Diamond42474/peregrine-constellation/commit/730da3233faf592f910f8ff07fb42f461abf8432))
 * built out cobs decoder pipeline and integrated it into decoder pipeline manager ([595ef48](https://github.com/Diamond42474/peregrine-constellation/commit/595ef485ccc787c018f1ed9d273846b84c5a52fd))
 * Encoder Pipeline ([cc19e52](https://github.com/Diamond42474/peregrine-constellation/commit/cc19e52ebcaed1f9cfe12796f1faf3b211602dd0))
 * Made biquad filtering dynamic to sample rate ([a74681e](https://github.com/Diamond42474/peregrine-constellation/commit/a74681e928aa595086d39dfa848ef34f472c809e))
 * Pipeline for managing frame encoding ([883af6d](https://github.com/Diamond42474/peregrine-constellation/commit/883af6df9f1de4dfc9251751c8d8056eb13c5a0e))
+* Started adding in a modem and orchestrator to handle packets and sending and receiving data ([7371ee9](https://github.com/Diamond42474/peregrine-constellation/commit/7371ee91560988d5b770a834e1f4b7da08ad0a0f))
 
 
 ### Bug Fixes
