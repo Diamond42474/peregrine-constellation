@@ -16,6 +16,11 @@ static inline void bit_unpacker_init(bit_unpacker_t *u)
     u->bit_pos = 0;
 }
 
+static inline bool bit_unpacker_empty(bit_unpacker_t *u)
+{
+    return !u->has_byte;
+}
+
 static inline int bit_unpacker_pop(bit_unpacker_t *u, circular_buffer_t *cb, bool *bit)
 {
     if (!u->has_byte || u->bit_pos == 8)
