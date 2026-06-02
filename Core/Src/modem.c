@@ -45,11 +45,7 @@ int modem_init(modem_handle_t *handle, void *orchestrator_ctx)
     handle->transmitting = false;
 
     // Setup BSP components
-    if (adc_bsp_init())
-    {
-        LOG_ERROR("Failed to init ADC BSP");
-        return -1;
-    }
+    // ADC initialized in decoder init function since it needs the sample rate
     if (ptt_bsp_init())
     {
         LOG_ERROR("Failed to init PTT BSP");
@@ -272,6 +268,12 @@ static int _init_decoder(modem_handle_t *handle)
     if (decoder_set_output_buffer_size(&handle->decoder, pconfigDECODER_OUTPUT_BUFFER_SIZE))
     {
         LOG_ERROR("Failed to set decoder output buffer size");
+        return -1;
+    }
+
+    if (adc_bsp_init(sample_rate))
+    {
+        LOG_ERROR("Failed to init ADC BSP");
         return -1;
     }
 
