@@ -13,7 +13,7 @@
  *
  * @return The recommended sample rate in Hz
  */
-double calculate_sample_rate(double f1, double f2, double baud)
+int calculate_sample_rate(double f1, double f2, double baud)
 {
     double fmax = (f1 > f2) ? f1 : f2;
 
@@ -22,5 +22,5 @@ double calculate_sample_rate(double f1, double f2, double baud)
 
     double N = (n_nyquist > MIN_SAMPLES_PER_BIT) ? n_nyquist : MIN_SAMPLES_PER_BIT;
 
-    return baud * N * OVERSAMPLING_FACTOR;
+    return (int)(baud * N * OVERSAMPLING_FACTOR);
 }
