@@ -41,6 +41,8 @@ target_include_directories(peregrine-constellation
     INTERFACE
         ${CMAKE_CURRENT_LIST_DIR}/Inc/interface
         ${CMAKE_CURRENT_LIST_DIR}/Inc
+        ${CMAKE_CURRENT_LIST_DIR}/Inc/bsp
+        ${CMAKE_CURRENT_LIST_DIR}/Inc/utils
 )
 
 # Link the internal implementation to the public interface
