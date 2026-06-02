@@ -7,7 +7,7 @@
  * @param timer Pointer to the timer to start.
  * @param duration_us Duration of the timer in microseconds.
  */
-void time_utils_start(timer_t *timer, uint64_t duration_us)
+void time_utils_start(HAL_timer_t *timer, uint64_t duration_us)
 {
     timer->duration_us = duration_us;
     timer->finish_time_us = time_bsp_get_us() + duration_us;
@@ -19,7 +19,7 @@ void time_utils_start(timer_t *timer, uint64_t duration_us)
  * @param timer Pointer to the timer to check.
  * @return true if the timer has completed, false otherwise.
  */
-bool time_utils_done(timer_t *timer)
+bool time_utils_done(HAL_timer_t *timer)
 {
     uint64_t now_us = time_bsp_get_us();
     return now_us >= timer->finish_time_us;
@@ -30,7 +30,7 @@ bool time_utils_done(timer_t *timer)
  *
  * @param timer Pointer to the timer to reset.
  */
-void time_utils_reset(timer_t *timer)
+void time_utils_reset(HAL_timer_t *timer)
 {
     timer->finish_time_us = time_bsp_get_us() + timer->duration_us;
 }

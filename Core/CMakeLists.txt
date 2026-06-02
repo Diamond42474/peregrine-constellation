@@ -16,6 +16,9 @@ add_library(peregrine-constellation-impl STATIC
     ${CMAKE_CURRENT_LIST_DIR}/Src/utils/goertzel.c
     ${CMAKE_CURRENT_LIST_DIR}/Src/utils/circular_buffer.c
     ${CMAKE_CURRENT_LIST_DIR}/Src/utils/fsk_utils.c
+
+    ${CMAKE_CURRENT_LIST_DIR}/Src/orchestrator.c
+    ${CMAKE_CURRENT_LIST_DIR}/Src/modem.c
 )
 
 # Internal include dirs, not exposed to consumers

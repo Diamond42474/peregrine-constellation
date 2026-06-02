@@ -11,10 +11,10 @@ typedef struct
 {
     uint64_t duration_us;
     uint64_t finish_time_us;
-} timer_t;
+} HAL_timer_t;
 
-void time_utils_start(timer_t *timer, uint64_t duration_us);
-bool time_utils_done(timer_t *timer);
-void time_utils_reset(timer_t *timer);
+void time_utils_start(HAL_timer_t *timer, uint64_t duration_us);
+bool time_utils_done(HAL_timer_t *timer);
+void time_utils_reset(HAL_timer_t *timer);
 
 #endif // TIME_UTILS_H

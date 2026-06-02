@@ -79,8 +79,6 @@ int decoder_deinit(decoder_handle_t *handle)
     handle->bit_decoder_handle = NULL;
     handle->byte_decoder_handle = NULL;
 
-    // TODO: Deinit sub modules
-
     handle->state = DECODER_STATE_UNINITIALIZED;
 
     return 0;
@@ -429,6 +427,29 @@ bool decoder_busy(decoder_handle_t *handle)
     }
 
     return handle->state != DECODER_STATE_IDLE;
+}
+
+bool decoder_signal_detected(decoder_handle_t *handle)
+{
+    if (!handle)
+    {
+        LOG_ERROR("Handle is NULL");
+        return false;
+    }
+
+    switch (handle->bit_decoder)
+    {
+    case BIT_DECODER_FSK:
+        return fsk_decoder_signal_detected((fsk_decoder_handle_t *)handle->bit_decoder_handle);
+        break;
+    case BIT_DECODER_NONE:
+        // No bit decoder set
+        return false;
+        break;
+    default:
+        LOG_ERROR("Unknown bit decoder type");
+        return false;
+    }
 }
 
 static void _handle_sub_tasks(decoder_handle_t *handle)

@@ -61,4 +61,6 @@ bool decoder_has_packet(decoder_handle_t *handle);
 int decoder_get_packet(decoder_handle_t *handle, packet_t *packet);
 bool decoder_busy(decoder_handle_t *handle);
 
+bool decoder_signal_detected(decoder_handle_t *handle); // Active RX signal
+
 #endif // DECODER_H

@@ -50,4 +50,6 @@ int fsk_decoder_reset_symbol_timing(fsk_decoder_handle_t *handle);
 int fsk_decoder_task(fsk_decoder_handle_t *handle, decoder_handle_t *ctx);
 bool fsk_decoder_busy(fsk_decoder_handle_t *handle, decoder_handle_t *ctx);
 
+bool fsk_decoder_signal_detected(fsk_decoder_handle_t *handle);
+
 #endif // FSK_DECODER_H

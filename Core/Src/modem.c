@@ -1,15 +1,19 @@
 #include "modem.h"
 #include "c-logger.h"
 #include "interface/pconfig.h"
+#include "orchestrator.h"
 #include "bsp/adc_bsp.h"
 #include "bsp/ptt_bsp.h"
 #include "bsp/dac_bsp.h"
+#include <string.h>
+#include "utils/fsk_utils.h"
+#include "encoding/packet_serializer.h"
 
 static int _init_decoder(modem_handle_t *handle);
 static int _handle_tx(modem_handle_t *handle);
 static int _handle_rx(modem_handle_t *handle);
 
-int modem_init(modem_handle_t *handle, orchestrator_handle_t *orchestrator_ctx)
+int modem_init(modem_handle_t *handle, void *orchestrator_ctx)
 {
     int ret = 0;
 
@@ -32,7 +36,7 @@ int modem_init(modem_handle_t *handle, orchestrator_handle_t *orchestrator_ctx)
     time_utils_start(&handle->symbol_timer, (ONE_SECOND / pconfigBAUD_RATE)); // Start symbol timer based on baud rate
     time_utils_start(&handle->ptt_timer, pconfigPTT_DELAY_MS * ONE_MS);       // Start PTT delay timer
 
-    if (circular_buffer_dynamic_init(&handle->tx_buffer, pconfigMODEM_TX_BUFFER_SIZE, sizeof(uint8_t)))
+    if (circular_buffer_dynamic_init(&handle->tx_buffer, sizeof(uint8_t), pconfigMODEM_TX_BUFFER_SIZE))
     {
         LOG_ERROR("Failed to init modem TX buffer");
         return -1;
@@ -63,7 +67,7 @@ failed:
     return ret;
 }
 
-int modem_send(modem_handle_t *handle, circular_buffer_t *cb)
+int modem_send_raw(modem_handle_t *handle, circular_buffer_t *cb)
 {
     int ret = 0;
 
@@ -76,17 +80,42 @@ int modem_send(modem_handle_t *handle, circular_buffer_t *cb)
     while (circular_buffer_count(cb) > 0)
     {
         uint8_t byte;
-        if (circular_buffer_read(cb, &byte, sizeof(uint8_t)) != 0)
+        if (circular_buffer_pop(cb, &byte) != 0)
         {
             LOG_ERROR("Failed to read from cb");
             return -1;
         }
 
-        if (circular_buffer_write(&handle->tx_buffer, &byte, sizeof(uint8_t)) != 0)
+        if (circular_buffer_push(&handle->tx_buffer, &byte) != 0)
         {
             LOG_ERROR("Failed to write to modem tx_buffer");
             return -1;
         }
+    }
+
+    dac_bsp_set_tone(pconfigMODEM_FREQ_0); // Set this so recevers can detect line busy ASAP
+    time_utils_reset(&handle->ptt_timer);  // Reset PTT timer to start delay before transmission
+    ptt_bsp_set_ptt(true);                 // Set PTT high to start transmission
+    handle->transmitting = true;
+
+    return ret;
+}
+
+int modem_send_packet(modem_handle_t *handle, const packet_t *packet)
+{
+    int ret = 0;
+
+    if (!handle || !packet)
+    {
+        LOG_ERROR("Handle or packet is NULL");
+        return -1;
+    }
+
+    // Serialize packet into modem TX buffer for transmission
+    if (packet_serializer_serialize(packet, &handle->tx_buffer))
+    {
+        LOG_ERROR("Failed to serialize packet for transmission");
+        return -1;
     }
 
     dac_bsp_set_tone(pconfigMODEM_FREQ_0); // Set this so recevers can detect line busy ASAP
@@ -105,7 +134,7 @@ bool modem_rx_busy(modem_handle_t *handle)
         return false;
     }
 
-    return decoder_is_receiving(&handle->decoder);
+    return decoder_signal_detected(&handle->decoder);
 }
 
 bool modem_tx_busy(modem_handle_t *handle)

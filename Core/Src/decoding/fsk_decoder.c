@@ -292,6 +292,17 @@ bool fsk_decoder_busy(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
     return circular_buffer_count(&ctx->input_buffer) >= (size_t)handle->configs.symbol_sample_size * handle->configs.buffer_symbol_count;
 }
 
+bool fsk_decoder_signal_detected(fsk_decoder_handle_t *handle)
+{
+    if (!handle)
+    {
+        LOG_ERROR("FSK decoder handle is NULL");
+        return false;
+    }
+
+    return handle->signal_detected;
+}
+
 int _process_sample(uint16_t sample, fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
 {
     // Turn DC 12bit sample into float centered around 0

@@ -1,10 +1,12 @@
 #ifndef pconfig_H
 #define pconfig_H
 
+#define pconfigDEVICE_ADDRESS (0x01) // 8-bit address for this device
+
 #define pconfigMAX_PAYLOAD_SIZE 32 // Maximum payload size
 
-#define pconfigRX_BUFFER_SIZE 256  // Size of the receive buffer
-#define pconfigTX_BUFFER_SIZE 4096 // Size of the transmit buffer * pconfigMAX_PAYLOAD_SIZE
+#define pconfigRX_BUFFER_SIZE 128 // Number of packets that can be buffered for reception
+#define pconfigTX_BUFFER_SIZE 128 // Number of packets that can be buffered for transmission
 
 #define pconfigMAX_RETRIES 5            // Number of retries before giving up
 #define pconfigBACKOFF_BASE_TIME_MS 100 // Base time to wait before retrying
