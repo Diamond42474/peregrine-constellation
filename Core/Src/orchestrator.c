@@ -59,13 +59,12 @@ int orchestrator_send(orchestrator_handle_t *handle, const uint8_t *data, size_t
     // Create data packet
     packet_t packet;
     memset(&packet, 0, sizeof(packet_t));
-    packet.content.src_addr = pconfigDEVICE_ADDRESS;
-    packet.content.dest_addr = dest_addr;
-    packet.content.id = 0;   // TODO: Implement packet ID management
-    packet.content.ttl = 0;  // TODO: Implement TTL management
-    packet.content.type = 0; // TODO: Define packet types
-    packet.content.payload_length = len > pconfigMAX_PAYLOAD_SIZE ? pconfigMAX_PAYLOAD_SIZE : len;
-    memcpy(packet.content.payload, data, packet.content.payload_length);
+    static int id = 0;
+    if (initialize_packet(&packet, PACKET_TYPE_DATA, pconfigDEVICE_ADDRESS, dest_addr, id++, data, len))
+    {
+        LOG_ERROR("Failed to initialize packet");
+        return -1;
+    }
 
     // Push packet to TX buffer for transmission by the modem task
     if (circular_buffer_push(&handle->tx_packet_buffer, &packet))
@@ -164,20 +163,4 @@ int orchestrator_packet_callback(orchestrator_handle_t *handle, const packet_t *
     }
 
     return 0;
-}
-
-int _send_packet(orchestrator_handle_t *handle, const packet_t *packet)
-{
-    if (!handle)
-    {
-        LOG_ERROR("Handle is NULL");
-        return -1;
-    }
-    if (!packet)
-    {
-        LOG_ERROR("Packet is NULL");
-        return -1;
-    }
-
-    return modem_send_packet(&handle->modem, packet);
 }
