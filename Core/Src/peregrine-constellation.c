@@ -49,7 +49,7 @@ pc_error_e pc_send_message(pc_handle_t *handle, uint8_t dest_addr, const uint8_t
 {
     if (handle == NULL)
     {
-        printf("Invalid handle\n");
+        LOG_ERROR("Handle is NULL");
         return PC_ERROR_INVALID_HANDLE;
     }
 
