@@ -23,7 +23,7 @@ int initialize_packet(packet_t *packet, packet_type_e packet_type, uint16_t src_
     packet->content.src_addr = src_addr;
     packet->content.dest_addr = dest_addr;
     packet->content.id = id;
-    packet->content.ttl = 10; // Default TTL value, can be adjusted as
+    packet->content.ttl = pconfigTTL; // Default TTL value, can be adjusted as
     packet->content.type = packet_type;
 
     // Limit payload length if it exceeds maximum size
@@ -39,7 +39,7 @@ int initialize_packet(packet_t *packet, packet_type_e packet_type, uint16_t src_
     memcpy(packet->content.payload, payload, payload_length);
 
     // Calculate header_crc for the packet
-    packet->content.crc = calculate_crc(packet); // Ensure calculate_header_crc() is defined correctly
+    packet->content.crc = calculate_crc(packet);
 
     return 0;
 }
