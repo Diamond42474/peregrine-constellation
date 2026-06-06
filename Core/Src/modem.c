@@ -264,7 +264,11 @@ static int _init_decoder(modem_handle_t *handle)
         LOG_ERROR("Failed to set byte decoder");
         return -1;
     }
-
+    if (decoder_set_input_buffer_size(&handle->decoder, samples_per_bit * pconfigDECODER_BUFFER_SYMBOL_COUNT))
+    {
+        LOG_ERROR("Failed to set decoder input buffer size");
+        return -1;
+    }
     if (decoder_set_output_buffer_size(&handle->decoder, pconfigDECODER_OUTPUT_BUFFER_SIZE))
     {
         LOG_ERROR("Failed to set decoder output buffer size");

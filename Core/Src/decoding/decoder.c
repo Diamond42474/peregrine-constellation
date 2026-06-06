@@ -181,7 +181,7 @@ int decoder_task(decoder_handle_t *handle)
         // Input buffer takes in 12-bit samples as uint16_t
         if (circular_buffer_dynamic_init(&handle->input_buffer, sizeof(uint16_t), handle->input_buffer_size))
         {
-            LOG_ERROR("Failed to initialize input buffer");
+            LOG_ERROR("Failed to initialize input buffer: item_size=%zu, max=%zu", sizeof(uint16_t), handle->input_buffer_size);
             ret = -1;
             handle->state = DECODER_STATE_UNINITIALIZED;
             goto failed;
