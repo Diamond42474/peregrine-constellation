@@ -295,6 +295,11 @@ int _handle_tx(modem_handle_t *handle)
         return -1;
     }
 
+    if (!handle->transmitting)
+    {
+        return 0; // Not currently transmitting, nothing to do
+    }
+
     if (!time_utils_done(&handle->ptt_timer))
     {
         return 0; // Not time to send next symbol yet
