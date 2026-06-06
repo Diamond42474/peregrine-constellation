@@ -59,7 +59,7 @@ int orchestrator_send(orchestrator_handle_t *handle, const uint8_t *data, size_t
     // Create data packet
     packet_t packet;
     memset(&packet, 0, sizeof(packet_t));
-    static int id = 0;
+    static uint8_t id = 0;
     if (initialize_packet(&packet, PACKET_TYPE_DATA, pconfigDEVICE_ADDRESS, dest_addr, id++, data, len))
     {
         LOG_ERROR("Failed to initialize packet");
@@ -112,7 +112,7 @@ int orchestrator_task(orchestrator_handle_t *handle)
                 LOG_ERROR("Failed to send packet through modem");
                 return -1;
             }
-        }
+                }
     }
 
     // PSUDO Receiving
