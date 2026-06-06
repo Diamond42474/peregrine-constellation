@@ -1,8 +1,9 @@
-##  (2026-06-04)
+##  (2026-06-06)
 
 
 ### Features
 
+* Added a little packet id (just for testing) ([0c35491](https://github.com/Diamond42474/peregrine-constellation/commit/0c3549105d62374599e6639a31a3ce1f616e8710))
 * Added AI generated workflow ([9d29f0a](https://github.com/Diamond42474/peregrine-constellation/commit/9d29f0aa2b12fc458709e75bc07a2ec3bbeb7349))
 * Added auto-timing recovery ([92e4567](https://github.com/Diamond42474/peregrine-constellation/commit/92e4567c47341504ac8cbd07d8dd4f4b67bb62c3))
 * Added bit unpacker is empty function ([d4e2475](https://github.com/Diamond42474/peregrine-constellation/commit/d4e24758a71e619487ed0fb913d761ffb883ef81))
@@ -27,6 +28,9 @@
 * Bad MSB/LSB handling when dealing with uint16_t preamble ([288d2c3](https://github.com/Diamond42474/peregrine-constellation/commit/288d2c3399dc398ecfaa2a31be648361b68da01a))
 * byte assembler preamle takes into account bit order ([3dc15f7](https://github.com/Diamond42474/peregrine-constellation/commit/3dc15f754beff1f19e13b48fb39fdeb9ddfa7e91))
 * byte assembler sends preamble so framer knows when new message starts ([24e343f](https://github.com/Diamond42474/peregrine-constellation/commit/24e343f17da9539ca787342d2de6ed1e9938f239))
+* Error that would cause us to never know if the CB was being overflown. This should be a config option later though ([cca395b](https://github.com/Diamond42474/peregrine-constellation/commit/cca395b6359752b42cebe8f655b8f3655983325d))
+* Fixed bit unpacker bug that never told us when we no longer have a byte ([a652bc4](https://github.com/Diamond42474/peregrine-constellation/commit/a652bc4e6fc0c84f86520c0555807d8544a55b51))
+* Fixed bug that was caused by not setting the decoder input buffer size ([9e3948b](https://github.com/Diamond42474/peregrine-constellation/commit/9e3948b359734c12d685c0133d3579ad595356fa))
 * now decoder doesn't consider available frame to be a pending transfer since the decoder doesn't handle the data after that. (it's grabbed from a high level) ([d3ffbdc](https://github.com/Diamond42474/peregrine-constellation/commit/d3ffbdcdb57fd23d570276a8f96d71deafa7bf68))
 
 
@@ -35,5 +39,6 @@
 * Added state-based flags for grabbing when the decoder is busy or not ([30c9bcc](https://github.com/Diamond42474/peregrine-constellation/commit/30c9bcc2da0f6f1f22c2384aa32c8321b47a0cb8))
 * Decoder now uses single input and output buffer that's shared between sub-modules ([df63923](https://github.com/Diamond42474/peregrine-constellation/commit/df639237c8097ec9aceca616e93f625bf0fa6950))
 * Faster FSK window offset calculation ([cc67878](https://github.com/Diamond42474/peregrine-constellation/commit/cc6787837b8de2af79ffbd67a8923a0438bd0316))
+* Reduced modem work by only running TX handling if we already think we're transmitting ([0b7c387](https://github.com/Diamond42474/peregrine-constellation/commit/0b7c387e0bd9f85e35b83907e26dcb0caa201fe1))
 * simplified fsk timing calculator ([9759f0c](https://github.com/Diamond42474/peregrine-constellation/commit/9759f0ca30091dcae83014938cc93e22219ec267))
 
