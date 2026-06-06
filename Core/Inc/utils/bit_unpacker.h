@@ -34,6 +34,10 @@ static inline int bit_unpacker_pop(bit_unpacker_t *u, circular_buffer_t *cb, boo
     }
     *bit = (u->current_byte >> (7 - u->bit_pos)) & 1;
     u->bit_pos++;
+    if (u->bit_pos >= 8)
+    {
+        u->has_byte = false;
+    }
     return 0;
 }
 
