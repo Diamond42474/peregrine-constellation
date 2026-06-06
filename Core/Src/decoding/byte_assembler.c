@@ -148,20 +148,6 @@ static int _process_bit(byte_assembler_handle_t *handle, decoder_handle_t *ctx, 
         uint8_t hi = (preamble >> 8) & 0xFF;
         uint8_t lo = preamble & 0xFF;
 
-        if (decoder_process_byte(ctx, hi))
-        {
-            LOG_ERROR("Failed to process preamble high byte");
-            ret = -1;
-            goto failed;
-        }
-
-        if (decoder_process_byte(ctx, lo))
-        {
-            LOG_ERROR("Failed to process preamble low byte");
-            ret = -1;
-            goto failed;
-        }
-
         return 0;
     }
 
