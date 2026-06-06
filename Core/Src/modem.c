@@ -308,8 +308,8 @@ int _handle_tx(modem_handle_t *handle)
 
     if (bit_unpacker_empty(&handle->bit_unpacker) && !circular_buffer_count(&handle->tx_buffer)) // No more data to send
     {
-        dac_bsp_set_tone(pconfigMODEM_FREQ_0); // Stop transmission
-        ptt_bsp_set_ptt(false);                // Set PTT low to end transmission
+        dac_bsp_set_tone(0);    // Stop transmission
+        ptt_bsp_set_ptt(false); // Set PTT low to end transmission
         handle->transmitting = false;
         return 0;
     }
