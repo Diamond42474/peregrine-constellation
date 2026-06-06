@@ -23,8 +23,8 @@
 
 typedef enum
 {
-    PACKET_TYPE_DATA = 0,
-    PACKET_TYPE_ACK = 1,
+    PACKET_TYPE_DATA = 0xA,
+    PACKET_TYPE_ACK = 0xB,
 } packet_type_e;
 
 typedef struct
