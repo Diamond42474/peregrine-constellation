@@ -1,4 +1,4 @@
-##  (2026-05-30)
+##  (2026-06-04)
 
 
 ### Features
@@ -18,6 +18,7 @@
 * Implemented modem TX ([47d531e](https://github.com/Diamond42474/peregrine-constellation/commit/47d531e48d05aaa90e03c30142a57d068d41a36e))
 * Made biquad filtering dynamic to sample rate ([a74681e](https://github.com/Diamond42474/peregrine-constellation/commit/a74681e928aa595086d39dfa848ef34f472c809e))
 * Pipeline for managing frame encoding ([883af6d](https://github.com/Diamond42474/peregrine-constellation/commit/883af6df9f1de4dfc9251751c8d8056eb13c5a0e))
+* PSUDO Send/Receive ([13dfb85](https://github.com/Diamond42474/peregrine-constellation/commit/13dfb85739e544767a7c5a0e3c2df03cf975f3ec))
 * Started adding in a modem and orchestrator to handle packets and sending and receiving data ([7371ee9](https://github.com/Diamond42474/peregrine-constellation/commit/7371ee91560988d5b770a834e1f4b7da08ad0a0f))
 
 
