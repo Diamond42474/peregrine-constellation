@@ -105,12 +105,15 @@ int circular_buffer_push(circular_buffer_t *cb, const void *item)
         return -1; // Invalid parameters
     }
 
-    memcpy((char *)cb->buffer + (cb->head * cb->element_size), item, cb->element_size);
-
     if (cb->full)
     {
+        LOG_WARN("Circular buffer is full");
+        // TODO: Add an option to prevent overwriting old data and instead return an error code
+        return -1;                           // Buffer is full, cannot push new item
         cb->tail = (cb->tail + 1) % cb->max; // Overwrite the oldest data
     }
+
+    memcpy((char *)cb->buffer + (cb->head * cb->element_size), item, cb->element_size);
 
     cb->head = (cb->head + 1) % cb->max;
     cb->full = (cb->head == cb->tail);
