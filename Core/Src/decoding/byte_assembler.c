@@ -28,6 +28,8 @@ int byte_assembler_init(byte_assembler_handle_t *handle)
     handle->preamble_found = false;
     handle->state = BYTE_ASSEMBLER_WAITING_FOR_PREAMBLE;
 
+    bit_unstuffer_init(&handle->bit_unstuffer);
+
     return 0;
 }
 
@@ -148,6 +150,8 @@ static int _process_bit(byte_assembler_handle_t *handle, decoder_handle_t *ctx, 
         uint8_t hi = (preamble >> 8) & 0xFF;
         uint8_t lo = preamble & 0xFF;
 
+        bit_unstuffer_reset(&handle->bit_unstuffer); // Reset bit unstuffer state for new packet
+        handle->state = BYTE_ASSEMBLER_ASSEMBLING;
         return 0;
     }
 
@@ -155,6 +159,14 @@ static int _process_bit(byte_assembler_handle_t *handle, decoder_handle_t *ctx, 
     {
         // Still looking for preamble, don't assemble bytes yet
         return 0;
+    }
+
+    bool valid; 
+    bit_unstuffer_process(&handle->bit_unstuffer, bit, &bit, &valid);
+    if (!valid)
+    {
+        LOG_DEBUG("Bit was a stuffed bit, discarded");
+        return 0; // Stuffed bit, ignore
     }
 
     handle->current_byte |= (bit & 0x01) << (7 - handle->bits_collected);

@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include "utils/circular_buffer.h"
 #include "decoding/decoder.h"
+#include "encoding/bit_stuffer.h"
 
 typedef struct
 {
@@ -16,6 +17,8 @@ typedef struct
 
     unsigned char current_byte;
     int bits_collected;
+
+    bit_unstuffer_t bit_unstuffer;
 
     enum
     {

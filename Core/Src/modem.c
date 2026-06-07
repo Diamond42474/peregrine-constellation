@@ -58,6 +58,9 @@ int modem_init(modem_handle_t *handle, void *orchestrator_ctx)
     }
 
     bit_unpacker_init(&handle->bit_unpacker);
+    bit_stuffer_init(&handle->bit_stuffer);
+
+    handle->state = MODEM_STATE_IDLE;
 
 failed:
     return ret;
@@ -107,6 +110,18 @@ int modem_send_packet(modem_handle_t *handle, const packet_t *packet)
         return -1;
     }
 
+    uint8_t sync_word[2] = {pconfigPREAMBLE_BYTE_1, pconfigPREAMBLE_BYTE_2};
+    if (circular_buffer_push(&handle->tx_buffer, &sync_word[0]))
+    {
+        LOG_ERROR("Failed to push preamble byte 1 to tx buffer");
+        return -1;
+    }
+    if (circular_buffer_push(&handle->tx_buffer, &sync_word[1]))
+    {
+        LOG_ERROR("Failed to push preamble byte 2 to tx buffer");
+        return -1;
+    }
+
     // Serialize packet into modem TX buffer for transmission
     if (packet_serializer_serialize(packet, &handle->tx_buffer))
     {
@@ -118,6 +133,7 @@ int modem_send_packet(modem_handle_t *handle, const packet_t *packet)
     time_utils_reset(&handle->ptt_timer);  // Reset PTT timer to start delay before transmission
     ptt_bsp_set_ptt(true);                 // Set PTT high to start transmission
     handle->transmitting = true;
+    handle->state = MODEM_STATE_TX_PREAMBLE;
 
     return ret;
 }
@@ -316,11 +332,38 @@ int _handle_tx(modem_handle_t *handle)
         dac_bsp_set_tone(0);    // Stop transmission
         ptt_bsp_set_ptt(false); // Set PTT low to end transmission
         handle->transmitting = false;
+        bit_stuffer_reset(&handle->bit_stuffer); // Reset bit stuffer state for next transmission
+        handle->state = MODEM_STATE_IDLE;
         return 0;
     }
 
     bool bit;
-    bit_unpacker_pop(&handle->bit_unpacker, &handle->tx_buffer, &bit);
+    switch (handle->state)
+    {
+    case MODEM_STATE_TX_PREAMBLE:
+        bit_unpacker_pop(&handle->bit_unpacker, &handle->tx_buffer, &bit);
+        handle->preamble_sent++;
+        if (handle->preamble_sent >= sizeof(uint16_t) * 8) // 16 bits of preamble (2 bytes)
+        {
+            handle->state = MODEM_STATE_TX_PACKET;
+            handle->preamble_sent = 0;
+        }
+        break;
+    case MODEM_STATE_TX_PACKET:
+        // Bit stuffing
+        bit_unpacker_peek(&handle->bit_unpacker, &handle->tx_buffer, &bit);
+        bool consumed_input;
+        if (bit_stuffer_process(&handle->bit_stuffer, bit, &bit, &consumed_input))
+        {
+            LOG_ERROR("Failed to process bit stuffer");
+            return -1;
+        }
+        if (consumed_input)
+        {
+            bit_unpacker_pop(&handle->bit_unpacker, &handle->tx_buffer, &bit); // Consume input bit if it was processed (not just a stuffed bit)
+        }
+        break;
+    }
     if (bit)
     {
         dac_bsp_set_tone(pconfigMODEM_FREQ_1);

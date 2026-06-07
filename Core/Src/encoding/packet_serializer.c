@@ -11,7 +11,6 @@ int packet_serializer_serialize(const packet_t *packet, circular_buffer_t *outpu
         return -1;
     }
 
-    uint8_t sync_word[2] = {pconfigPREAMBLE_BYTE_1, pconfigPREAMBLE_BYTE_2};
     uint8_t tmp[PACKET_HEADER_SIZE];
     memset(tmp, 0, sizeof(tmp));
 
@@ -23,18 +22,6 @@ int packet_serializer_serialize(const packet_t *packet, circular_buffer_t *outpu
     tmp[4] = packet->content.payload_length;
     tmp[5] = (packet->content.crc >> 8) & 0xFF;
     tmp[6] = packet->content.crc & 0xFF;
-
-    // Push preamble/sync word to output buffer
-    if (circular_buffer_push(output, &sync_word[0]))
-    {
-        LOG_ERROR("Failed to push preamble byte 1");
-        return -1;
-    }
-    if (circular_buffer_push(output, &sync_word[1]))
-    {
-        LOG_ERROR("Failed to push preamble byte 2");
-        return -1;
-    }
 
     // Push packet header to output buffer
     for (size_t i = 0; i < PACKET_HEADER_SIZE; i++)
