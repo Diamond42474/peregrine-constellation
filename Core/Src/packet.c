@@ -47,8 +47,8 @@ int initialize_packet(packet_t *packet, packet_type_e packet_type, uint16_t src_
 void print_packet(const packet_t *packet)
 {
     printf("Packet type: %d\n", packet->content.type);
-    printf("Source address: 0x%04X\n", packet->content.src_addr);
-    printf("Destination address: 0x%04X\n", packet->content.dest_addr);
+    printf("Source address: 0x%02X\n", packet->content.src_addr);
+    printf("Destination address: 0x%02X\n", packet->content.dest_addr);
     printf("ID: %d\n", packet->content.id);
     printf("Payload length: %d\n", packet->content.payload_length);
     printf("TTL: %d\n", packet->content.ttl);
