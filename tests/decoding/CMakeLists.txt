@@ -1,2 +1,3 @@
 add_subdirectory(byte_assembler)
 add_subdirectory(fsk)
+add_subdirectory(packet_assembler)
