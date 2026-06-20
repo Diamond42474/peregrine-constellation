@@ -1,7 +1,7 @@
 #include "utils/fsk_utils.h"
 #include <math.h>
 
-#define OVERSAMPLING_FACTOR (9)
+#define OVERSAMPLING_FACTOR (3)
 #define MIN_SAMPLES_PER_BIT (32)
 
 /**
