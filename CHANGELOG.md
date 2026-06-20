@@ -1,4 +1,4 @@
-##  (2026-06-06)
+##  (2026-06-20)
 
 
 ### Features
@@ -6,6 +6,7 @@
 * Added a little packet id (just for testing) ([0c35491](https://github.com/Diamond42474/peregrine-constellation/commit/0c3549105d62374599e6639a31a3ce1f616e8710))
 * Added AI generated workflow ([9d29f0a](https://github.com/Diamond42474/peregrine-constellation/commit/9d29f0aa2b12fc458709e75bc07a2ec3bbeb7349))
 * Added auto-timing recovery ([92e4567](https://github.com/Diamond42474/peregrine-constellation/commit/92e4567c47341504ac8cbd07d8dd4f4b67bb62c3))
+* Added bit stuffing to ensure there are edges for timing recovery ([d1fb9e6](https://github.com/Diamond42474/peregrine-constellation/commit/d1fb9e6f7c7a68a2d5babbcce3053b1890804cdc))
 * Added bit unpacker is empty function ([d4e2475](https://github.com/Diamond42474/peregrine-constellation/commit/d4e24758a71e619487ed0fb913d761ffb883ef81))
 * Added bit unpacker to the modem ([0daf52b](https://github.com/Diamond42474/peregrine-constellation/commit/0daf52b1dab9dda47bd4e3f62026ed3f96edb23f))
 * Added BSP interfaces for audio in/out and PTT control ([f81b4f7](https://github.com/Diamond42474/peregrine-constellation/commit/f81b4f765dde4256a31dc57a4e8ef6fda0ba5c70))
@@ -32,6 +33,7 @@
 * Fixed bit unpacker bug that never told us when we no longer have a byte ([a652bc4](https://github.com/Diamond42474/peregrine-constellation/commit/a652bc4e6fc0c84f86520c0555807d8544a55b51))
 * Fixed bug that was caused by not setting the decoder input buffer size ([9e3948b](https://github.com/Diamond42474/peregrine-constellation/commit/9e3948b359734c12d685c0133d3579ad595356fa))
 * now decoder doesn't consider available frame to be a pending transfer since the decoder doesn't handle the data after that. (it's grabbed from a high level) ([d3ffbdc](https://github.com/Diamond42474/peregrine-constellation/commit/d3ffbdcdb57fd23d570276a8f96d71deafa7bf68))
+* Packet decoder is reset when preamble is detected. Resolving the issue of garbage data desyncing packet parsing ([1361cba](https://github.com/Diamond42474/peregrine-constellation/commit/1361cba21b0e8cecfd8f9e149f52691a4cab75e8))
 
 
 ### Performance Improvements
