@@ -350,8 +350,33 @@ int decoder_process_packet(decoder_handle_t *handle, packet_t *packet)
         goto failed;
     }
 
+    // We got a whole packet, so we should get a sync word before the next packet
+    // This makes us wait for the sync word before passing bytes to the packet decoder
+    if (byte_assembler_reset(handle->byte_decoder_handle))
+    {
+        LOG_ERROR("Failed to reset byte assembler");
+        return -1;
+    }
+
 failed:
     return ret;
+}
+
+int decoder_sync_word_detected(decoder_handle_t *handle)
+{
+    if (!handle)
+    {
+        LOG_ERROR("Handle is NULL");
+        return -1;
+    }
+
+    if(packet_decoder_reset(&handle->packet_decoder))
+    {
+        LOG_ERROR("Failed to reset packet decoder");
+        return -1;
+    }
+
+    return 0;
 }
 
 bool decoder_has_packet(decoder_handle_t *handle)

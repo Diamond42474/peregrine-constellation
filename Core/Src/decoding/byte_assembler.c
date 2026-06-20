@@ -152,6 +152,11 @@ static int _process_bit(byte_assembler_handle_t *handle, decoder_handle_t *ctx, 
 
         bit_unstuffer_reset(&handle->bit_unstuffer); // Reset bit unstuffer state for new packet
         handle->state = BYTE_ASSEMBLER_ASSEMBLING;
+        if(decoder_sync_word_detected(ctx))
+        {
+            LOG_ERROR("Failed to notify decoder of sync word");
+            return -1;
+        }
         return 0;
     }
 

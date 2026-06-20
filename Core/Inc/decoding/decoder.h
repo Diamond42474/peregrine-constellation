@@ -56,6 +56,7 @@ int decoder_process_samples(decoder_handle_t *handle, const uint16_t *samples, s
 int decoder_process_bit(decoder_handle_t *handle, bool bit);
 int decoder_process_byte(decoder_handle_t *handle, unsigned char byte);
 int decoder_process_packet(decoder_handle_t *handle, packet_t *packet);
+int decoder_sync_word_detected(decoder_handle_t *handle);
 
 bool decoder_has_packet(decoder_handle_t *handle);
 int decoder_get_packet(decoder_handle_t *handle, packet_t *packet);

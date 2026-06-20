@@ -100,6 +100,11 @@ int decoder_process_packet(decoder_handle_t *handle, packet_t *packet)
     return 0;
 }
 
+int decoder_sync_word_detected(decoder_handle_t *handle)
+{
+    return 0;
+}
+
 bool decoder_has_packet(decoder_handle_t *handle)
 {
     return false;
