@@ -142,7 +142,7 @@ static int _process_bit(byte_assembler_handle_t *handle, decoder_handle_t *ctx, 
     if (preamble == handle->preamble)
     {
         handle->preamble_found = true;
-        LOG_INFO("Preamble detected, aligning bytes");
+        LOG_DEBUG("Preamble detected, aligning bytes");
         // Reset byte assembly state
         handle->current_byte = 0;
         handle->bits_collected = 0;

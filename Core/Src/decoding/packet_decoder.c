@@ -76,9 +76,12 @@ int packet_decoder_process_byte(packet_decoder_t *handle, unsigned char byte)
                 handle->current_packet.content.payload[i] = handle->packet_buffer[PACKET_HEADER_SIZE + i];
             }
 
-            // Packet fully received
-            LOG_INFO("Full packet received");
-            decoder_process_packet(handle->ctx, &handle->current_packet);
+            // Check CRC
+            if (handle->current_packet.content.crc == calculate_crc(&handle->current_packet))
+            {
+                LOG_DEBUG("CRC Validated");
+                decoder_process_packet(handle->ctx, &handle->current_packet);
+            }
             packet_decoder_reset(handle);
             handle->state = PACKET_DECODER_STATE_WAITING_FOR_HEADER;
         }
