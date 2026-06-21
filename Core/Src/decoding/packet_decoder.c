@@ -40,8 +40,6 @@ int packet_decoder_process_byte(packet_decoder_t *handle, unsigned char byte)
 
     LOG_DEBUG("Byte received: 0x%02X\t%c", byte, byte);
 
-    //return 0;
-    //LOG_INFO("Processing byte: 0x%02X", byte);
     handle->packet_buffer[handle->packet_buffer_index++] = byte;
 
     switch (handle->state)
@@ -62,7 +60,7 @@ int packet_decoder_process_byte(packet_decoder_t *handle, unsigned char byte)
                 return -1;
             }
 
-            LOG_INFO("Header received and validated, waiting for payload");
+            LOG_DEBUG("Header received and validated, waiting for payload");
             handle->state = PACKET_DECODER_STATE_WAITING_FOR_PAYLOAD;
         }
         break;
@@ -81,6 +79,10 @@ int packet_decoder_process_byte(packet_decoder_t *handle, unsigned char byte)
             {
                 LOG_DEBUG("CRC Validated");
                 decoder_process_packet(handle->ctx, &handle->current_packet);
+            }
+            else
+            {
+                LOG_INFO("CRC didn't match");
             }
             packet_decoder_reset(handle);
             handle->state = PACKET_DECODER_STATE_WAITING_FOR_HEADER;

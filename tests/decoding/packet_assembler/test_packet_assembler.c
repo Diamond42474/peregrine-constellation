@@ -53,6 +53,8 @@ void test_packet_decoding(void)
             .payload_length = 4,
             .crc = 0x1234,
             .payload = {0xDE, 0xAD, 0xBE, 0xEF}}};
+    
+    test_packet.content.crc = calculate_crc(&test_packet);
 
     if (packet_serializer_serialize(&test_packet, &serialized_buffer))
     {
