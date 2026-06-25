@@ -1,7 +1,7 @@
 #ifndef pconfig_H
 #define pconfig_H
 
-#define pconfigFCC_CALLSIGN ""         // FCC Callsign if using amateur bands
+#define pconfigFCC_CALLSIGN "KM7DEJ"   // FCC Callsign if using amateur bands
 #define pconfigCALLSIGN_INTERVAL_M (9) // Callsign broadcasting interval
 #define pconfigDEVICE_ADDRESS (0x01)   // 8-bit address for this device
 
