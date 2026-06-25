@@ -1,7 +1,9 @@
 #ifndef pconfig_H
 #define pconfig_H
 
-#define pconfigDEVICE_ADDRESS (0x01) // 8-bit address for this device
+#define pconfigFCC_CALLSIGN ""         // FCC Callsign if using amateur bands
+#define pconfigCALLSIGN_INTERVAL_M (9) // Callsign broadcasting interval
+#define pconfigDEVICE_ADDRESS (0x01)   // 8-bit address for this device
 
 #define pconfigMAX_PAYLOAD_SIZE 32 // Maximum payload size
 
@@ -28,6 +30,6 @@
 
 // Modem
 #define pconfigMODEM_TX_BUFFER_SIZE (pconfigMAX_PAYLOAD_SIZE * 2) // Buffer for outgoing data to be transmitted, should be multiple of max payload size
-#define pconfigPTT_DELAY_MS (200)                                 // Delay between setting PTT high and starting transmission to allow hardware to stabilize
+#define pconfigPTT_DELAY_MS (500)                                 // Delay between setting PTT high and starting transmission to allow hardware to stabilize
 
 #endif // pconfig_H

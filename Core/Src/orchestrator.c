@@ -3,6 +3,8 @@
 #include "interface/pconfig.h"
 #include <string.h>
 
+static int _add_beacon_to_queue(orchestrator_handle_t *handle);
+
 int orchestrator_init(orchestrator_handle_t *handle, rx_callback_t rx_callback)
 {
     int ret = 0;
@@ -39,6 +41,8 @@ int orchestrator_init(orchestrator_handle_t *handle, rx_callback_t rx_callback)
         LOG_ERROR("Failed to init TX packet buffer");
         return -1;
     }
+
+    time_utils_start(&handle->beacon_timer, pconfigCALLSIGN_INTERVAL_M * ONE_MINUTE);
 
     return 0;
 }
@@ -92,6 +96,17 @@ int orchestrator_task(orchestrator_handle_t *handle)
         return -1;
     }
 
+    if (time_utils_done(&handle->beacon_timer))
+    {
+        time_utils_reset(&handle->beacon_timer);
+
+        if (_add_beacon_to_queue(handle))
+        {
+            LOG_ERROR("Failed to queue beacon");
+            return -1;
+        }
+    }
+
     // TODO: Handle timing, retries, and other orchestrator-level tasks
 
     // PSUDO Sending
@@ -112,7 +127,7 @@ int orchestrator_task(orchestrator_handle_t *handle)
                 LOG_ERROR("Failed to send packet through modem");
                 return -1;
             }
-                }
+        }
     }
 
     // PSUDO Receiving
@@ -159,6 +174,35 @@ int orchestrator_packet_callback(orchestrator_handle_t *handle, const packet_t *
     if (circular_buffer_push(&handle->rx_packet_buffer, packet))
     {
         LOG_ERROR("Failed to push packet to RX buffer");
+        return -1;
+    }
+
+    return 0;
+}
+
+// =-=-=-=-=-=-=-=-=-=-=
+//  PRIVATE FUNCTIONS
+// =-=-=-=-=-=-=-=-=-=-=
+
+int _add_beacon_to_queue(orchestrator_handle_t *handle)
+{
+    packet_t packet;
+
+    if (sizeof(pconfigFCC_CALLSIGN) == 0)
+    {
+        LOG_WARN("No FCC callsign.. Hopefully you're on MURS");
+        return 0;
+    }
+
+    if (initialize_packet(&packet, PACKET_TYPE_BEACON, pconfigDEVICE_ADDRESS, 0, 0, pconfigFCC_CALLSIGN, sizeof(pconfigFCC_CALLSIGN) - 1))
+    {
+        LOG_ERROR("Failed to create packet");
+        return -1;
+    }
+
+    if(circular_buffer_push(&handle->tx_packet_buffer, &packet))
+    {
+        LOG_ERROR("Failed to add packet to queue");
         return -1;
     }
 

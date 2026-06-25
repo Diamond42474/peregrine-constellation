@@ -6,6 +6,7 @@
 
 #define ONE_MS (1000)
 #define ONE_SECOND (ONE_MS * 1000)
+#define ONE_MINUTE (ONE_SECOND * 60)
 
 typedef struct 
 {
