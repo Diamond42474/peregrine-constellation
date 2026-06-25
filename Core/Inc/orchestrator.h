@@ -3,6 +3,7 @@
 
 #include "utils/circular_buffer.h"
 #include "interface/pconfig.h"
+#include "utils/time_utils.h"
 #include "modem.h"
 
 // Callback type for when a packet is received and decoded, allowing the application to process it
@@ -15,6 +16,8 @@ typedef struct orchestrator_handle
 
     circular_buffer_t rx_packet_buffer; //< Inbound packets
     circular_buffer_t tx_packet_buffer; //< Outbound packets
+
+    HAL_timer_t beacon_timer;
 } orchestrator_handle_t;
 
 int orchestrator_init(orchestrator_handle_t *handle, rx_callback_t rx_callback);
