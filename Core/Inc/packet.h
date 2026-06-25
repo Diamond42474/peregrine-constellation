@@ -23,8 +23,9 @@
 
 typedef enum
 {
-    PACKET_TYPE_DATA = 0x0,
-    PACKET_TYPE_ACK = 0x1,
+    PACKET_TYPE_BEACON = 0x0, //< Broadcasts callsign to satisfy the FCC
+    PACKET_TYPE_DATA = 0x1,   //< Application layer data
+    PACKET_TYPE_ACK = 0x2,    //< Acknowledgement for data packet received
 } packet_type_e;
 
 typedef struct
