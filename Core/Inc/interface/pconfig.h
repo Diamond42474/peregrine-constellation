@@ -32,4 +32,15 @@
 #define pconfigMODEM_TX_BUFFER_SIZE (pconfigMAX_PAYLOAD_SIZE * 2) // Buffer for outgoing data to be transmitted, should be multiple of max payload size
 #define pconfigPTT_DELAY_MS (500)                                 // Delay between setting PTT high and starting transmission to allow hardware to stabilize
 
+// Sampling rates & symbol sizes
+#define OVERSAMPLING_FACTOR (3)
+#define MIN_SAMPLES_PER_BIT (32)
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define CALCULATE_SAMPLE_RATE(f1, f2, baud)                                                                                \
+    (((((4 * MAX((f1), (f2))) / (baud)) > MIN_SAMPLES_PER_BIT) ? ((4 * MAX((f1), (f2))) / (baud)) : MIN_SAMPLES_PER_BIT) * \
+     (baud) * OVERSAMPLING_FACTOR)
+
+#define pconfigSAMPLE_RATE_HZ (CALCULATE_SAMPLE_RATE(pconfigMODEM_FREQ_0, pconfigMODEM_FREQ_1, pconfigBAUD_RATE))
+#define pconfigSAMPLES_PER_SYMBOL (pconfigSAMPLE_RATE_HZ / pconfigBAUD_RATE)
+
 #endif // pconfig_H

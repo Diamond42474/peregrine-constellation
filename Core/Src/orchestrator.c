@@ -30,13 +30,13 @@ int orchestrator_init(orchestrator_handle_t *handle, rx_callback_t rx_callback)
 
     handle->rx_callback = rx_callback;
 
-    if (circular_buffer_dynamic_init(&handle->rx_packet_buffer, sizeof(packet_t), pconfigRX_BUFFER_SIZE))
+    if (circular_buffer_static_init(&handle->rx_packet_buffer, &handle->rx_packet_array, sizeof(packet_t), pconfigRX_BUFFER_SIZE))
     {
         LOG_ERROR("Failed to init RX packet buffer");
         return -1;
     }
 
-    if (circular_buffer_dynamic_init(&handle->tx_packet_buffer, sizeof(packet_t), pconfigTX_BUFFER_SIZE))
+    if (circular_buffer_static_init(&handle->tx_packet_buffer, &handle->tx_packet_array, sizeof(packet_t), pconfigTX_BUFFER_SIZE))
     {
         LOG_ERROR("Failed to init TX packet buffer");
         return -1;
@@ -200,7 +200,7 @@ int _add_beacon_to_queue(orchestrator_handle_t *handle)
         return -1;
     }
 
-    if(circular_buffer_push(&handle->tx_packet_buffer, &packet))
+    if (circular_buffer_push(&handle->tx_packet_buffer, &packet))
     {
         LOG_ERROR("Failed to add packet to queue");
         return -1;

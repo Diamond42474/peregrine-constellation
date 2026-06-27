@@ -36,7 +36,7 @@ int modem_init(modem_handle_t *handle, void *orchestrator_ctx)
     time_utils_start(&handle->symbol_timer, (ONE_SECOND / pconfigBAUD_RATE)); // Start symbol timer based on baud rate
     time_utils_start(&handle->ptt_timer, pconfigPTT_DELAY_MS * ONE_MS);       // Start PTT delay timer
 
-    if (circular_buffer_dynamic_init(&handle->tx_buffer, sizeof(uint8_t), pconfigMODEM_TX_BUFFER_SIZE))
+    if (circular_buffer_static_init(&handle->tx_buffer, &handle->tx_array, sizeof(uint8_t), pconfigMODEM_TX_BUFFER_SIZE))
     {
         LOG_ERROR("Failed to init modem TX buffer");
         return -1;
@@ -223,9 +223,6 @@ static int _init_decoder(modem_handle_t *handle)
     int ret = 0;
 
     // Initialize decoder
-    double sample_rate = calculate_sample_rate(pconfigMODEM_FREQ_0, pconfigMODEM_FREQ_1, pconfigBAUD_RATE);
-    size_t samples_per_bit = (size_t)(sample_rate / pconfigBAUD_RATE);
-
     if (decoder_init(&handle->decoder))
     {
         LOG_ERROR("Failed to init decoder");
@@ -238,12 +235,12 @@ static int _init_decoder(modem_handle_t *handle)
         LOG_ERROR("Failed to init FSK decoder");
         return -1;
     }
-    if (fsk_decoder_set_symbol_sample_size(&handle->fsk_decoder, samples_per_bit, pconfigDECODER_BUFFER_SYMBOL_COUNT)) // Buffer for 3 symbols to allow for timing recovery
+    if (fsk_decoder_set_symbol_sample_size(&handle->fsk_decoder, pconfigSAMPLES_PER_SYMBOL, pconfigDECODER_BUFFER_SYMBOL_COUNT)) // Buffer for 3 symbols to allow for timing recovery
     {
         LOG_ERROR("Failed to set FSK decoder symbol sample size");
         return -1;
     }
-    if (fsk_decoder_set_sample_rate(&handle->fsk_decoder, (int)sample_rate))
+    if (fsk_decoder_set_sample_rate(&handle->fsk_decoder, pconfigSAMPLE_RATE_HZ))
     {
         LOG_ERROR("Failed to set FSK decoder sample rate");
         return -1;
@@ -280,18 +277,8 @@ static int _init_decoder(modem_handle_t *handle)
         LOG_ERROR("Failed to set byte decoder");
         return -1;
     }
-    if (decoder_set_input_buffer_size(&handle->decoder, samples_per_bit * pconfigDECODER_BUFFER_SYMBOL_COUNT))
-    {
-        LOG_ERROR("Failed to set decoder input buffer size");
-        return -1;
-    }
-    if (decoder_set_output_buffer_size(&handle->decoder, pconfigDECODER_OUTPUT_BUFFER_SIZE))
-    {
-        LOG_ERROR("Failed to set decoder output buffer size");
-        return -1;
-    }
 
-    if (adc_bsp_init(sample_rate))
+    if (adc_bsp_init(pconfigSAMPLE_RATE_HZ))
     {
         LOG_ERROR("Failed to init ADC BSP");
         return -1;

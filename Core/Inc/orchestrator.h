@@ -15,7 +15,9 @@ typedef struct orchestrator_handle
     rx_callback_t rx_callback; //< Callback for when a data packet is received and decoded for the application layer
 
     circular_buffer_t rx_packet_buffer; //< Inbound packets
+    packet_t rx_packet_array[pconfigRX_BUFFER_SIZE];
     circular_buffer_t tx_packet_buffer; //< Outbound packets
+    packet_t tx_packet_array[pconfigTX_BUFFER_SIZE];
 
     HAL_timer_t beacon_timer;
 } orchestrator_handle_t;
