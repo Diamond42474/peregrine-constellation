@@ -36,9 +36,6 @@ int decoder_init(decoder_handle_t *handle)
     handle->bit_decoder_handle = NULL;
     handle->byte_decoder_handle = NULL;
 
-    handle->input_buffer_size = 0;
-    handle->output_buffer_size = 0;
-
     if (packet_decoder_init(&handle->packet_decoder, handle))
     {
         LOG_ERROR("Failed to initialize packet decoder");
@@ -134,30 +131,6 @@ failed:
     return ret;
 }
 
-int decoder_set_input_buffer_size(decoder_handle_t *handle, size_t size)
-{
-    if (!handle)
-    {
-        LOG_ERROR("Decoder handle is NULL");
-        return -1;
-    }
-
-    handle->input_buffer_size = size;
-    return 0;
-}
-
-int decoder_set_output_buffer_size(decoder_handle_t *handle, size_t size)
-{
-    if (!handle)
-    {
-        LOG_ERROR("Decoder handle is NULL");
-        return -1;
-    }
-
-    handle->output_buffer_size = size;
-    return 0;
-}
-
 int decoder_task(decoder_handle_t *handle)
 {
     int ret = 0;
@@ -179,16 +152,16 @@ int decoder_task(decoder_handle_t *handle)
         LOG_INFO("Initializing decoder...");
 
         // Input buffer takes in 12-bit samples as uint16_t
-        if (circular_buffer_dynamic_init(&handle->input_buffer, sizeof(uint16_t), handle->input_buffer_size))
+        if (circular_buffer_static_init(&handle->input_buffer, &handle->input_array, sizeof(uint16_t), sizeof(handle->input_array) / sizeof(uint16_t)))
         {
-            LOG_ERROR("Failed to initialize input buffer: item_size=%zu, max=%zu", sizeof(uint16_t), handle->input_buffer_size);
+            LOG_ERROR("Failed to initialize decoder input buffer");
             ret = -1;
             handle->state = DECODER_STATE_UNINITIALIZED;
             goto failed;
         }
 
         // Output buffer holds decoded bytes
-        if (circular_buffer_dynamic_init(&handle->output_buffer, sizeof(packet_t), handle->output_buffer_size))
+        if (circular_buffer_static_init(&handle->output_buffer, &handle->output_array, sizeof(packet_t), pconfigDECODER_OUTPUT_BUFFER_SIZE))
         {
             LOG_ERROR("Failed to initialize output buffer");
             ret = -1;

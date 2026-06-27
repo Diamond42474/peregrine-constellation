@@ -62,16 +62,6 @@ int decoder_set_bit_decoder(decoder_handle_t *handle, bit_decoder_e type, void *
     return 0;
 }
 
-int decoder_set_input_buffer_size(decoder_handle_t *handle, size_t size)
-{
-    return 0;
-}
-
-int decoder_set_output_buffer_size(decoder_handle_t *handle, size_t size)
-{
-    return 0;
-}
-
 int decoder_task(decoder_handle_t *handle)
 {
     return 0;

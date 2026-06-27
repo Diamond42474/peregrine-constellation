@@ -91,8 +91,6 @@ int main(void)
     decoder_init(&decoder);
     decoder_set_bit_decoder(&decoder, BIT_DECODER_FSK, &fsk_decoder);
     decoder_set_byte_decoder(&decoder, BYTE_DECODER_BIT_STUFFING, &byte_assembler);
-    decoder_set_input_buffer_size(&decoder, samples_per_bit * 5); // Input buffer for samples
-    decoder_set_output_buffer_size(&decoder, 10);                 // Output buffer for packets
 
     // Main processing loop
     LOG_INFO("Startup loop");

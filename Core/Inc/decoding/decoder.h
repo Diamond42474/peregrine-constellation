@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "utils/circular_buffer.h"
+#include "utils/fsk_utils.h"
 #include "packet_decoder.h"
 
 typedef enum
@@ -29,10 +30,10 @@ typedef struct
     packet_decoder_t packet_decoder;
 
     circular_buffer_t input_buffer; ///< Buffer for incoming ADC samples or bits, depending on the bit decoder
-    size_t input_buffer_size;       ///< Size of the input buffer in number of elements (e.g., number of samples or bits)
+    uint16_t input_array[pconfigSAMPLES_PER_SYMBOL * pconfigDECODER_BUFFER_SYMBOL_COUNT];
 
     circular_buffer_t output_buffer; ///< Buffer for decoded packets ready to be consumed by the application
-    size_t output_buffer_size;       ///< Number of packets that can be stored in the output buffer
+    packet_t output_array[pconfigDECODER_OUTPUT_BUFFER_SIZE];
 
     enum
     {
@@ -48,8 +49,6 @@ int decoder_deinit(decoder_handle_t *handle);
 
 int decoder_set_byte_decoder(decoder_handle_t *handle, byte_decoder_e type, void *byte_decoder_handle);
 int decoder_set_bit_decoder(decoder_handle_t *handle, bit_decoder_e type, void *bit_decoder_handle);
-int decoder_set_input_buffer_size(decoder_handle_t *handle, size_t size);
-int decoder_set_output_buffer_size(decoder_handle_t *handle, size_t size);
 int decoder_task(decoder_handle_t *handle);
 
 int decoder_process_samples(decoder_handle_t *handle, const uint16_t *samples, size_t num_samples);

@@ -1,8 +1,6 @@
 #include "utils/fsk_utils.h"
 #include <math.h>
-
-#define OVERSAMPLING_FACTOR (3)
-#define MIN_SAMPLES_PER_BIT (32)
+#include "interface/pconfig.h"
 
 /**
  * @brief Calculate the recommended sample rate for FSK modulation based on the given frequencies and baud rate.

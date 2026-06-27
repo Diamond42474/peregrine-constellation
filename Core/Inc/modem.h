@@ -34,6 +34,7 @@ typedef struct
     HAL_timer_t symbol_timer;    //< Timer for ensuring symbols are transmitted at the correct baud rate
     HAL_timer_t ptt_timer;       //< Delay between setting PTT high and starting transmission to allow hardware to stabilize
     circular_buffer_t tx_buffer; ///< Buffer for outgoing data to be transmitted
+    uint8_t tx_array[pconfigMODEM_TX_BUFFER_SIZE];
     bool transmitting;           ///< Flag to indicate if the modem is currently transmitting
 
     bit_unpacker_t bit_unpacker; ///< Bit unpacker for converting byte stream to bits for transmission
