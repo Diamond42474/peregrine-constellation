@@ -240,10 +240,10 @@ int fsk_decoder_task(fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
         break;
     case FSK_DECODER_STATE_INITIALIZING:
         handle->state = FSK_DECODER_STATE_IDLE;
-        float gap = 300;
+        float gap = 200;
         init_bandpass_4th(handle->configs.freq_0 - gap, handle->configs.freq_0 + gap, handle->configs.sample_rate, &handle->bp1200_1, &handle->bp1200_2);
         init_bandpass_4th(handle->configs.freq_1 - gap, handle->configs.freq_1 + gap, handle->configs.sample_rate, &handle->bp2200_1, &handle->bp2200_2);
-        env_metric_init(&handle->env_metric, (float)handle->configs.sample_rate, 0.001f);
+        env_metric_init(&handle->env_metric, (float)handle->configs.sample_rate, 0.002f);
         handle->half_symbol_sample_size = handle->configs.symbol_sample_size / 2;
         handle->prev_metric = 0.0f;
         LOG_INFO("FSK decoder initialized with symbol_sample_size=%d, buffer_symbol_count=%d, \nsample_rate=%d, freq_0=%.1f, freq_1=%.1f, power_threshold=%.2f",

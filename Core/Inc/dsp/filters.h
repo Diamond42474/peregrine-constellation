@@ -43,7 +43,8 @@ static inline float biquad_process(biquad_t *f, float x)
 
 static inline float process_sos(biquad_t *s, int n, float x)
 {
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++)
+    {
         x = biquad_process(&s[i], x);
     }
     return x;
@@ -62,11 +63,12 @@ void env_metric_init(env_metric_t *s, float sample_rate, float tau_seconds);
 static inline float env_metric_process(env_metric_t *s, float y1200, float y2200)
 {
     // Envelope (abs + 1st-order lowpass)
-    s->env1200 += s->alpha * (fabsf(y1200) - s->env1200);
-    s->env2200 += s->alpha * (fabsf(y2200) - s->env2200);
+    s->env1200 += s->alpha * (y1200 * y1200 - s->env1200);
+    s->env2200 += s->alpha * (y2200 * y2200 - s->env2200);
 
     // Metric (soft decision)
-    return s->env2200 - s->env1200;
+    float sum = s->env2200 + s->env1200 + 1e-6f;
+    return (s->env2200 - s->env1200) / sum;
 }
 
 #endif // DSP_FILTERS_H
