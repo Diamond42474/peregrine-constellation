@@ -1,4 +1,4 @@
-##  (2026-06-29)
+##  (2026-07-02)
 
 
 ### Features
@@ -18,6 +18,7 @@
 * Added Unity testing framework ([fd0f4ef](https://github.com/Diamond42474/peregrine-constellation/commit/fd0f4ef00d3bedb649eea5b460e3694e8d9a5322))
 * AFSK using bandpass filtering, envelope detection, and PLL for constant timing recovery ([730da32](https://github.com/Diamond42474/peregrine-constellation/commit/730da3233faf592f910f8ff07fb42f461abf8432))
 * built out cobs decoder pipeline and integrated it into decoder pipeline manager ([595ef48](https://github.com/Diamond42474/peregrine-constellation/commit/595ef485ccc787c018f1ed9d273846b84c5a52fd))
+* Decoder resets if packet is invalid. This makes is wait for the next preamble instead of continuing to accept bytes that we know are out of sync ([4098499](https://github.com/Diamond42474/peregrine-constellation/commit/409849970f6df2aa431a3bd54aaf4f27843a4c0f))
 * Encoder Pipeline ([cc19e52](https://github.com/Diamond42474/peregrine-constellation/commit/cc19e52ebcaed1f9cfe12796f1faf3b211602dd0))
 * Implemented modem TX ([47d531e](https://github.com/Diamond42474/peregrine-constellation/commit/47d531e48d05aaa90e03c30142a57d068d41a36e))
 * Made biquad filtering dynamic to sample rate ([a74681e](https://github.com/Diamond42474/peregrine-constellation/commit/a74681e928aa595086d39dfa848ef34f472c809e))
