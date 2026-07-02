@@ -62,5 +62,6 @@ int decoder_get_packet(decoder_handle_t *handle, packet_t *packet);
 bool decoder_busy(decoder_handle_t *handle);
 
 bool decoder_signal_detected(decoder_handle_t *handle); // Active RX signal
+int decoder_reset(decoder_handle_t *handle); // Resets byte and packet assemblers, but does not clear the input buffer. Useful for resyncing after a lost packet.
 
 #endif // DECODER_H

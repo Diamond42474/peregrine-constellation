@@ -55,6 +55,7 @@ int packet_decoder_process_byte(packet_decoder_t *handle, unsigned char byte)
             if (handle->current_packet.content.payload_length > pconfigMAX_PAYLOAD_SIZE)
             {
                 LOG_ERROR("Invalid payload length: %d", handle->current_packet.content.payload_length);
+                decoder_reset(handle->ctx); // Resets byte decoder so we wait for next sync word
                 packet_decoder_reset(handle);
                 handle->state = PACKET_DECODER_STATE_WAITING_FOR_HEADER;
                 return -1;
@@ -84,7 +85,8 @@ int packet_decoder_process_byte(packet_decoder_t *handle, unsigned char byte)
             {
                 LOG_INFO("CRC didn't match");
             }
-            packet_decoder_reset(handle);
+            decoder_reset(handle->ctx);
+            packet_decoder_reset(handle); // Technically this is done by decoder_reset, but just to be safe
             handle->state = PACKET_DECODER_STATE_WAITING_FOR_HEADER;
         }
         break;

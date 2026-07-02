@@ -343,7 +343,7 @@ int decoder_sync_word_detected(decoder_handle_t *handle)
         return -1;
     }
 
-    if(packet_decoder_reset(&handle->packet_decoder))
+    if (packet_decoder_reset(&handle->packet_decoder))
     {
         LOG_ERROR("Failed to reset packet decoder");
         return -1;
@@ -448,6 +448,37 @@ bool decoder_signal_detected(decoder_handle_t *handle)
         LOG_ERROR("Unknown bit decoder type");
         return false;
     }
+}
+
+int decoder_reset(decoder_handle_t *handle)
+{
+    if (!handle)
+    {
+        LOG_ERROR("Handle is NULL");
+        return -1;
+    }
+
+    if (handle->state == DECODER_STATE_UNINITIALIZED || handle->state == DECODER_STATE_INITIALIZING)
+    {
+        LOG_ERROR("Decoder is uninitialized");
+        return -1;
+    }
+
+    // Reset byte assembler
+    if (byte_assembler_reset(handle->byte_decoder_handle))
+    {
+        LOG_ERROR("Failed to reset byte assembler");
+        return -1;
+    }
+
+    // Reset packet decoder
+    if (packet_decoder_reset(&handle->packet_decoder))
+    {
+        LOG_ERROR("Failed to reset packet decoder");
+        return -1;
+    }
+
+    return 0;
 }
 
 static void _handle_sub_tasks(decoder_handle_t *handle)
