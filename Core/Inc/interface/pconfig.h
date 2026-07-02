@@ -24,7 +24,7 @@
 #define pconfigMODEM_FREQ_0 (1200)
 #define pconfigMODEM_FREQ_1 (2200)
 
-#define pconfigFSK_POWER_THRESHOLD (0.01f)      // Power threshold for FSK decoding (tune based on testing environment)
+#define pconfigFSK_POWER_THRESHOLD (0.5f)      // Power threshold for FSK decoding (tune based on testing environment)
 #define pconfigDECODER_BUFFER_SYMBOL_COUNT (32) // Multiple of symbol size
 #define pconfigDECODER_OUTPUT_BUFFER_SIZE (10)  // Number of packets that can be buffered for the application to read
 
