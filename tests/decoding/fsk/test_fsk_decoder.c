@@ -331,8 +331,11 @@ void auto_timing_recovery(void)
     process();
     send_bit(0);
 
-    send_noise(SYMBOL_SAMPLE_SIZE);
-    process();
+    for (int i = 0; i < 10; i++)
+    {
+        send_noise(SYMBOL_SAMPLE_SIZE);
+        process();
+    }
 
     bit = 1;
     TEST_ASSERT_EQUAL_MESSAGE(3, circular_buffer_count(&bit_circular_buffer), "We should have 3 bits ready to process");
