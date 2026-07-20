@@ -7,12 +7,13 @@
 #include "c-logger.h"
 #include "samples.h"
 #include "baud32.h"
+#include "interface/pconfig.h"
 
 #define MAX_LOOPS 1000000 // Safety to prevent infinite loops in tests
 
 #define F0 (1200.0f)
 #define F1 (2200.0f)
-#define POWER_THRESHOLD (0.01f)
+#define POWER_THRESHOLD (pconfigFSK_POWER_THRESHOLD)
 #define SAMPLE_RATE (79200)       // Based off decoder_example.c calculated for 32 baud
 #define SYMBOL_SAMPLE_SIZE (2475) // Based off decoder_example.c calculated for 32 baud
 #define BUFFER_SYMBOL_COUNT (3)   // Minimum of 3 is good for timing recovery

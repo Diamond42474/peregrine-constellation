@@ -109,3 +109,8 @@ bool decoder_busy(decoder_handle_t *handle)
 {
     return false;
 }
+
+int decoder_reset(decoder_handle_t *handle)
+{
+    return 0;
+}
