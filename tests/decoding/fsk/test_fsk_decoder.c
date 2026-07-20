@@ -49,7 +49,7 @@ void generate_sine_wave(uint16_t *buffer, float frequency, float sample_rate, ui
 void generate_noise(uint16_t *buffer, float sample_rate, uint32_t sample_count)
 {
     const int center = 2048;        // Half of 12-bit uint range
-    const int amplitude = 2048 / 2; // Max deviation from center (adjust for desired noise level)
+    const int amplitude = 2048; // Max deviation from center (adjust for desired noise level)
 
     for (uint32_t i = 0; i < sample_count; i++)
     {
