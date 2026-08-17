@@ -44,6 +44,6 @@
 #define pconfigSAMPLES_PER_SYMBOL (pconfigSAMPLE_RATE_HZ / pconfigBAUD_RATE)
 
 // DEBUG CONFIGURATIONS
-#define pconfig_DEBUG_RECORDING_ENABLED (1) // Enables ADC & filter recording for debugging purposes, can be used to generate test data for unit tests
+#define pconfig_DEBUG_RECORDING_ENABLED (0) // Enables ADC & filter recording for debugging purposes, can be used to generate test data for unit tests
 
 #endif // pconfig_H
