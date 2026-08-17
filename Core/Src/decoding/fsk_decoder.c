@@ -9,6 +9,7 @@
 #include "c-logger.h"
 #include "utils/circular_buffer.h"
 #include "dsp/filters.h"
+#include "interface/debug.h"
 
 static int _process_samples(fsk_decoder_handle_t *handle, decoder_handle_t *ctx);
 static size_t _calculate_window_offset(fsk_decoder_handle_t *handle, decoder_handle_t *ctx);
@@ -326,6 +327,10 @@ int _process_sample(uint16_t sample, fsk_decoder_handle_t *handle, decoder_handl
         handle->edge_detected = true;
         handle->metric_ticker = 0; // Reset timer on falling edge
     }
+
+#if pconfig_DEBUG_RECORDING_ENABLED
+    debug_handle_recording(sample, filtered_1200, filtered_2200, metric);
+#endif
 
     handle->prev_metric = metric;
 
