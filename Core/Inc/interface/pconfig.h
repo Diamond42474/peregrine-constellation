@@ -40,7 +40,7 @@
     (((((4 * MAX((f1), (f2))) / (baud)) > MIN_SAMPLES_PER_BIT) ? ((4 * MAX((f1), (f2))) / (baud)) : MIN_SAMPLES_PER_BIT) * \
      (baud) * OVERSAMPLING_FACTOR)
 
-#define pconfigSAMPLE_RATE_HZ (CALCULATE_SAMPLE_RATE(pconfigMODEM_FREQ_0, pconfigMODEM_FREQ_1, pconfigBAUD_RATE))
+#define pconfigSAMPLE_RATE_HZ 48000 //(CALCULATE_SAMPLE_RATE(pconfigMODEM_FREQ_0, pconfigMODEM_FREQ_1, pconfigBAUD_RATE))
 #define pconfigSAMPLES_PER_SYMBOL (pconfigSAMPLE_RATE_HZ / pconfigBAUD_RATE)
 
 // DEBUG CONFIGURATIONS
