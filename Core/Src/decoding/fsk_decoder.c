@@ -306,6 +306,11 @@ bool fsk_decoder_signal_detected(fsk_decoder_handle_t *handle)
 
 int _process_sample(uint16_t sample, fsk_decoder_handle_t *handle, decoder_handle_t *ctx)
 {
+#if pconfig_DEBUG_RECORDING_ENABLED
+    debug_handle_recording(sample);
+    return 0;
+#endif
+
     // Turn DC 12bit sample into float centered around 0
     float normalized_sample = ((float)sample - 2048.0f) / 2048.0f;
 
@@ -327,10 +332,6 @@ int _process_sample(uint16_t sample, fsk_decoder_handle_t *handle, decoder_handl
         handle->edge_detected = true;
         handle->metric_ticker = 0; // Reset timer on falling edge
     }
-
-#if pconfig_DEBUG_RECORDING_ENABLED
-    debug_handle_recording(sample, filtered_1200, filtered_2200, metric);
-#endif
 
     handle->prev_metric = metric;
 

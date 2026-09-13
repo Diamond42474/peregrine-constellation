@@ -40,10 +40,10 @@
     (((((4 * MAX((f1), (f2))) / (baud)) > MIN_SAMPLES_PER_BIT) ? ((4 * MAX((f1), (f2))) / (baud)) : MIN_SAMPLES_PER_BIT) * \
      (baud) * OVERSAMPLING_FACTOR)
 
-#define pconfigSAMPLE_RATE_HZ (CALCULATE_SAMPLE_RATE(pconfigMODEM_FREQ_0, pconfigMODEM_FREQ_1, pconfigBAUD_RATE))
+#define pconfigSAMPLE_RATE_HZ 44100 //(CALCULATE_SAMPLE_RATE(pconfigMODEM_FREQ_0, pconfigMODEM_FREQ_1, pconfigBAUD_RATE))
 #define pconfigSAMPLES_PER_SYMBOL (pconfigSAMPLE_RATE_HZ / pconfigBAUD_RATE)
 
 // DEBUG CONFIGURATIONS
-#define pconfig_DEBUG_RECORDING_ENABLED (0) // Enables ADC & filter recording for debugging purposes, can be used to generate test data for unit tests
+#define pconfig_DEBUG_RECORDING_ENABLED (1) // Enables ADC & filter recording for debugging purposes, can be used to generate test data for unit tests
 
 #endif // pconfig_H
