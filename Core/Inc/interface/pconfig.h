@@ -24,7 +24,7 @@
 #define pconfigMODEM_FREQ_0 (1200)
 #define pconfigMODEM_FREQ_1 (2200)
 
-#define pconfigFSK_POWER_THRESHOLD (0.5f)      // Power threshold for FSK decoding (tune based on testing environment)
+#define pconfigFSK_POWER_THRESHOLD (0.5f)       // Power threshold for FSK decoding (tune based on testing environment)
 #define pconfigDECODER_BUFFER_SYMBOL_COUNT (32) // Multiple of symbol size
 #define pconfigDECODER_OUTPUT_BUFFER_SIZE (10)  // Number of packets that can be buffered for the application to read
 
@@ -44,6 +44,8 @@
 #define pconfigSAMPLES_PER_SYMBOL (pconfigSAMPLE_RATE_HZ / pconfigBAUD_RATE)
 
 // DEBUG CONFIGURATIONS
+#ifndef pconfig_DEBUG_RECORDING_ENABLED
 #define pconfig_DEBUG_RECORDING_ENABLED (0) // Enables ADC & filter recording for debugging purposes, can be used to generate test data for unit tests
+#endif                                      // pconfig_DEBUG_RECORDING_ENABLED
 
 #endif // pconfig_H
